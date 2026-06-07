@@ -386,17 +386,42 @@ async def extract_batch(app, message, org_name, batch_id):
             'device-id': '39F093FF35F201D9'
         }
 
-# inside your extract_batch function, only replacing process_course_contents
+        async def get_signed_url(session, url, token):
+            if not url:
+                return ""
+            if any(x in url for x in ["classplusapp.com", "tencdn.classplusapp", "videos.classplusapp", "media-cdn"]):
+                try:
+                    cp_headers = {
+                        'host': 'api.classplusapp.com',
+                        'x-access-token': token,
+                        'accept-language': 'EN',
+                        'api-version': '18',
+                        'app-version': '1.4.73.2',
+                        'connection': 'Keep-Alive',
+                        'user-agent': 'Mobile-Android'
+                    }
+                    clean_url = url
+                    if "https://cpvod.testbook.com/" in clean_url or "classplusapp.com/drm/" in clean_url:
+                        clean_url = clean_url.replace("https://cpvod.testbook.com/", "https://media-cdn.classplusapp.com/drm/")
+                    
+                    signed_api = f"https://api.classplusapp.com/cams/uploader/video/jw-signed-url?url={clean_url}"
+                    async with session.get(signed_api, headers=cp_headers) as resp:
+                        if resp.status == 200:
+                            res_json = await resp.json()
+                            if "url" in res_json:
+                                return res_json["url"]
+                except Exception as e:
+                    print(f"Error signing URL {url}: {e}")
+            return url
 
-        async def process_course_contents(course_id, folder_id=0, folder_path=""):
+        async def process_course_contents(session, course_id, folder_id=0, folder_path=""):
             """Fetch and process course content recursively."""
             result = []
             url = f'{apiurl}/v2/course/content/get?courseId={course_id}&folderId={folder_id}'
 
-            async with aiohttp.ClientSession() as session:
-                async with session.get(url, headers=headers) as resp:
-                    course_data = await resp.json()
-                    course_data = course_data["data"]["courseContent"]
+            async with session.get(url, headers=headers) as resp:
+                course_data = await resp.json()
+                course_data = course_data["data"]["courseContent"]
                     
             tasks = []
             for item in course_data:
@@ -404,13 +429,18 @@ async def extract_batch(app, message, org_name, batch_id):
                 sub_id = item['id']
                 sub_name = item['name']
 
-                if content_type in ("2", "3"):  # Video or PDF
-                    url = item["url"]
-                    full_name = f"{folder_path}{sub_name}: {url}\n"
+                if content_type == "2":  # Video
+                    video_url = item["url"]
+                    signed_url = await get_signed_url(session, video_url, session_data["token"])
+                    full_name = f"{folder_path}{sub_name}: {signed_url}\n"
+                    result.append(full_name)
+                elif content_type == "3":  # PDF
+                    pdf_url = item["url"]
+                    full_name = f"{folder_path}{sub_name}: {pdf_url}\n"
                     result.append(full_name)
                 elif content_type == "1":  # Folder
-                 new_folder_path = f"{folder_path}{sub_name} - "
-                 tasks.append(process_course_contents(course_id, sub_id, new_folder_path))
+                    new_folder_path = f"{folder_path}{sub_name} - "
+                    tasks.append(process_course_contents(session, course_id, sub_id, new_folder_path))
 
             sub_contents = await asyncio.gather(*tasks)
             for sub_content in sub_contents:
@@ -418,22 +448,22 @@ async def extract_batch(app, message, org_name, batch_id):
 
             return result
 
-        async def fetch_live_videos(course_id):
+        async def fetch_live_videos(session, course_id):
             """Fetch live videos from the API."""
             outputs = []
-            async with aiohttp.ClientSession() as session:
-                try:
-                    url = f"{apiurl}/v2/course/live/list/videos?type=2&entityId={course_id}&limit=9999&offset=0"
-                    async with session.get(url, headers=headers) as response:
-                        j = await response.json()
-                        if "data" in j and "list" in j["data"]:
-                            for video in j["data"]["list"]:
-                                name = video.get("name", "Unknown Video")
-                                video_url = video.get("url", "")
-                                if video_url:
-                                    outputs.append(f"{name}: {video_url}\n")
-                except Exception as e:
-                    print(f"Error fetching live videos: {e}")
+            try:
+                url = f"{apiurl}/v2/course/live/list/videos?type=2&entityId={course_id}&limit=9999&offset=0"
+                async with session.get(url, headers=headers) as response:
+                    j = await response.json()
+                    if "data" in j and "list" in j["data"]:
+                        for video in j["data"]["list"]:
+                            name = video.get("name", "Unknown Video")
+                            video_url = video.get("url", "")
+                            if video_url:
+                                signed_url = await get_signed_url(session, video_url, session_data["token"])
+                                outputs.append(f"{name}: {signed_url}\n")
+            except Exception as e:
+                print(f"Error fetching live videos: {e}")
 
             return outputs
 
@@ -448,10 +478,11 @@ async def extract_batch(app, message, org_name, batch_id):
                 file.write(''.join(extracted_data))  
             return file_path
 
-        extracted_data, live_videos = await asyncio.gather(
-            process_course_contents(batch_id),
-            fetch_live_videos(batch_id)
-        )
+        async with aiohttp.ClientSession() as session:
+            extracted_data, live_videos = await asyncio.gather(
+                process_course_contents(session, batch_id),
+                fetch_live_videos(session, batch_id)
+            )
 
         extracted_data.extend(live_videos)
         file_path = await write_to_file(extracted_data)
