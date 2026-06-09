@@ -210,15 +210,12 @@ async def appex_v5_txt(app, message, api, name):
     
     login_prompt = (
         "━━━━━━━━━━━━━━━━━━━━━\n"
-        "🎭 <b>PRO_TXT_EXTRATOR_BOT</b> 🎭\n"
+        "🔑 **Appx Extractor Login**\n"
         "━━━━━━━━━━━━━━━━━━━━━\n\n"
-        "📝 <b>ʜᴏᴡ ᴛᴏ ʟᴏɢɪɴ:</b>\n\n"
-        "1️⃣ ᴜsᴇ ɪᴅ & ᴘᴀssᴡᴏʀᴅ:\n"
-        "   <code>ID*Password</code>\n\n"
-        "2️⃣ ᴏʀ ᴜsᴇ ᴛᴏᴋᴇɴ ᴅɪʀᴇᴄᴛʟʏ\n\n"
-        "📌 <b>ᴇxᴀᴍᴘʟᴇs:</b>\n"
-        "• ɪᴅ/ᴘᴀss ➠ <code>9769696969*password123</code>\n"
-        "• ᴛᴏᴋᴇɴ ➠ <code>eyJhbGciOiJIUzI1...</code>\n\n"
+        "**Now send your login credentials:**\n"
+        "1) `mobile*password` for password login\n"
+        "2) `10 digit mobile` for OTP login\n"
+        "3) `JWT token` for direct login\n\n"
         "━━━━━━━━━━━━━━━━━━━━━"
     )
     
@@ -229,74 +226,66 @@ async def appex_v5_txt(app, message, api, name):
     if '*' in raw_text:
         email, password = raw_text.split("*")
         raw_url = f"{api_base}/post/userLogin"
-        headers = {
-            "Auth-Key": "appxapi",
-            "User-Id": "-2",
-            "Authorization": "",
-            "User_app_category": "",
-            "Language": "en",
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Accept-Encoding": "gzip, deflate",
-            "User-Agent": "okhttp/4.9.1"
-        }
+        headers = {"Auth-Key": "appxapi", "User-Id": "-2", "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "okhttp/4.9.1"}
         data = {"email": email, "password": password}
-        
         try:
             response = requests.post(raw_url, data=data, headers=headers).json()
             status = response.get("status")
-
             if status == 200:
-                userid = response["data"]["userid"]
+                userid = str(response["data"]["userid"])
                 token = response["data"]["token"]
-            
             elif status == 203:
                 second_api_url = f"{api_base}/post/userLogin?extra_details=0"
-                second_headers = {
-                    "auth-key": "appxapi",
-                    "client-service": "Appx",
-                    "source": "website",
-                    "user-agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36",
-                    "accept": "*/*",
-                    "accept-language": "en-GB,en-US;q=0.9,en;q=0.8"
-                }
-                second_data = {
-                    "source": "website",
-                    "phone": email,
-                    "email": email,
-                    "password": password,
-                    "extra_details": "1"
-                }
-                
+                second_headers = {"auth-key": "appxapi", "client-service": "Appx", "source": "website"}
+                second_data = {"source": "website", "phone": email, "email": email, "password": password, "extra_details": "1"}
                 second_response = requests.post(second_api_url, headers=second_headers, data=second_data).json()
                 if second_response.get("status") == 200:
-                    userid = second_response["data"]["userid"]
+                    userid = str(second_response["data"]["userid"])
                     token = second_response["data"]["token"]
+                else:
+                    return await message.reply_text("❌ Login failed. Invalid credentials.")
+            else:
+                return await message.reply_text("❌ Login failed. Invalid credentials.")
         except Exception as e:
-            error_msg = (
-                "❌ <b>Login Failed</b>\n\n"
-                f"Error: {str(e)}\n\n"
-                "Please check your credentials and try again."
-            )
-            return await message.reply_text(error_msg)
-                               
-        hdr1 = {
-            "Client-Service": "Appx",
-            "source": "website",
-            "Auth-Key": "appxapi",
-            "Authorization": token,
-            "User-ID": "1234"
-        }
-        
+            return await message.reply_text(f"❌ Login Failed: {str(e)}")
+            
+    elif raw_text.isdigit() and len(raw_text) == 10:
+        url_otp = f"{api_base}/get/sendotp?phone={raw_text}"
+        otp_headers = {"Client-Service": "Appx", "Auth-Key": "appxapi", "source": "website"}
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url_otp, headers=otp_headers) as otp_resp:
+                    otp_json = await otp_resp.json()
+                    if otp_json.get("status") != 200:
+                        return await message.reply_text("❌ Failed to send OTP. Ensure the number is registered.")
+            
+            otp_input = await app.ask(message.chat.id, "📲 **OTP sent successfully!**\nPlease enter the OTP you received:")
+            otp_code = otp_input.text.strip()
+            
+            verify_url = f"{api_base}/get/otpverify?useremail={raw_text}&otp={otp_code}&device_id=WebBrowser17267591437616qmd1cxx313"
+            async with aiohttp.ClientSession() as session:
+                async with session.get(verify_url, headers=otp_headers) as verify_resp:
+                    verify_json = await verify_resp.json()
+                    if verify_json.get("status") == 200:
+                        token = verify_json['user']['token']
+                        userid = str(verify_json['user'].get('userid', '-2'))
+                        await message.reply_text(f"✅ OTP Verified! Token extracted:\n`{token}`")
+                    else:
+                        return await message.reply_text("❌ Invalid OTP.")
+        except Exception as e:
+            return await message.reply_text(f"❌ OTP Process Failed: {str(e)}")
+            
     else:
         userid = "extracted_userid_from_token"
         token = raw_text
-        hdr1 = {
-            "Client-Service": "Appx",
-            "source": "website",
-            "Auth-Key": "appxapi",
-            "Authorization": token,
-            "User-ID": userid
-        }  
+
+    hdr1 = {
+        "Client-Service": "Appx",
+        "source": "website",
+        "Auth-Key": "appxapi",
+        "Authorization": token,
+        "User-ID": userid
+    }  
         
     scraper = cloudscraper.create_scraper() 
     try:
