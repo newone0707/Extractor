@@ -53,28 +53,41 @@ def decode_base64(encoded_str):
 
 semaphore = asyncio.Semaphore(5)
 
-async def safe_fetch_json(session, url, headers, max_retries=4):
+# Thread-safe global scraper
+scraper = cloudscraper.create_scraper()
+
+def sync_safe_fetch(url, headers):
+    try:
+        r = scraper.get(url, headers=headers)
+        if r.status_code == 200:
+            return r.json()
+    except Exception as e:
+        pass
+    return None
+
+async def safe_fetch_json(url, headers, max_retries=4):
+    headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+    headers["Accept"] = "application/json, text/plain, */*"
+    
     for attempt in range(max_retries):
         try:
             async with semaphore:
-                async with session.get(url, headers=headers) as response:
-                    if response.status == 429:
-                        await asyncio.sleep(2 * (attempt + 1))
-                        continue
-                    if response.status != 200:
-                        return None
-                    return await response.json()
+                # Run the blocking cloudscraper call in a separate thread so we don't freeze the bot
+                result = await asyncio.to_thread(sync_safe_fetch, url, headers)
+                if result is not None:
+                    return result
         except Exception as e:
-            await asyncio.sleep(2 * (attempt + 1))
+            pass
+        await asyncio.sleep(2 * (attempt + 1))
     return None
 
-async def fetch_item_details(session, api_base, course_id, item, headers):
+async def fetch_item_details(api_base, course_id, item, headers):
     try:
         fi = item.get("id")
         vt = item.get("Title", "")
         outputs = []
 
-        r4 = await safe_fetch_json(session, f"{api_base}/get/fetchVideoDetailsById?course_id={course_id}&folder_wise_course=1&ytflag=0&video_id={fi}", headers)
+        r4 = await safe_fetch_json(f"{api_base}/get/fetchVideoDetailsById?course_id={course_id}&folder_wise_course=1&ytflag=0&video_id={fi}", headers)
         if not r4 or not r4.get("data"):
             return []
 
@@ -123,19 +136,19 @@ async def fetch_item_details(session, api_base, course_id, item, headers):
         logger.error(f"Error fetching item details: {e}")
         return []
 
-async def fetch_folder_contents(session, api_base, course_id, folder_id, headers):
+async def fetch_folder_contents(api_base, course_id, folder_id, headers):
     try:
         outputs = []
-        j = await safe_fetch_json(session, f"{api_base}/get/folder_contentsv2?course_id={course_id}&parent_id={folder_id}", headers)
+        j = await safe_fetch_json(f"{api_base}/get/folder_contentsv2?course_id={course_id}&parent_id={folder_id}", headers)
         if not j:
             return []
 
         tasks = []
         if "data" in j:
             for item in j["data"]:
-                tasks.append(fetch_item_details(session, api_base, course_id, item, headers))
+                tasks.append(fetch_item_details(api_base, course_id, item, headers))
                 if item.get("material_type") == "FOLDER":
-                    tasks.append(fetch_folder_contents(session, api_base, course_id, item["id"], headers))
+                    tasks.append(fetch_folder_contents(api_base, course_id, item["id"], headers))
 
         if tasks:
             results = await asyncio.gather(*tasks)
@@ -156,94 +169,93 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
             f"└─ Initializing batch: <code>{sanitized_course_name}</code>"
         )
 
-        async with aiohttp.ClientSession() as session:
-            j2 = await safe_fetch_json(session, f"{api_base}/get/folder_contentsv2?course_id={raw_text2}&parent_id=-1", hdr1)
+        j2 = await safe_fetch_json(f"{api_base}/get/folder_contentsv2?course_id={raw_text2}&parent_id=-1", hdr1)
 
-            if not j2 or not j2.get("data"):
-                await progress_msg.edit_text(
-                    "❌ <b>No Content Found</b>\n\n"
-                    "Try switching to v3 and retry."
-                )
-                return
-
-            all_outputs = []
-            tasks = []
-            
-            if "data" in j2:
-                total_items = len(j2["data"])
-                processed = 0
-                
-                for item in j2["data"]:
-                    tasks.append(fetch_item_details(session, api_base, raw_text2, item, hdr1))
-                    if item["material_type"] == "FOLDER":
-                        tasks.append(fetch_folder_contents(session, api_base, raw_text2, item["id"], hdr1))
-                    
-                    processed += 1
-                    if processed % 5 == 0:
-                        await progress_msg.edit_text(
-                            "🔄 <b>Processing Large Batch</b>\n"
-                            f"├─ Progress: {processed}/{total_items}\n"
-                            f"└─ Current: <code>{item.get('Title', 'Unknown')}</code>"
-                        )
-
-            if tasks:
-                results = await asyncio.gather(*tasks)
-                for res in results:
-                    if res:
-                        all_outputs.extend(res)
-
-            if not all_outputs:
-                await progress_msg.edit_text("❌ <b>No content found in this batch</b>")
-                return
-
-            video_count = sum(1 for url in all_outputs if any(ext in url.lower() for ext in ['.mp4', '.m3u8', '.mpd']))
-            pdf_count = sum(1 for url in all_outputs if '.pdf' in url.lower())
-            encrypted_count = sum(1 for url in all_outputs if '*' in url)
-
-            file_name = f"{app_name}_{sanitized_course_name}_{int(datetime.now().timestamp())}.txt"
-            with open(file_name, 'w', encoding='utf-8') as f:
-                f.write('\n'.join(all_outputs))
-
-            end_time = datetime.now()
-            duration = end_time - datetime.fromtimestamp(start_time)
-            minutes, seconds = divmod(duration.total_seconds(), 60)
-
-            caption = (
-                f"🎓 <b>COURSE EXTRACTED</b> 🎓\n\n"
-                f"📱 <b>APP:</b> {app_name}\n"
-                f"📚 <b>BATCH:</b> {sanitized_course_name}\n"
-                f"⏱ <b>EXTRACTION TIME:</b> {int(minutes):02d}:{int(seconds):02d}\n"
-                f"📅 <b>DATE:</b> {datetime.now(pytz.timezone('Asia/Kolkata')).strftime('%d-%m-%Y %H:%M:%S')} IST\n\n"
-                f"📊 <b>CONTENT STATS</b>\n"
-                f"├─ 📁 Total Links: {len(all_outputs)}\n"
-                f"├─ 🎬 Videos: {video_count}\n"
-                f"├─ 📄 PDFs: {pdf_count}\n"
-                f"└─ 🔐 Encrypted: {encrypted_count}\n\n"
-                f"🚀 <b>Extracted by:</b> @{(await app.get_me()).username}\n\n"
-                f"<code>╾───• {BOT_TEXT} •───╼</code>"
+        if not j2 or not j2.get("data"):
+            await progress_msg.edit_text(
+                "❌ <b>No Content Found</b>\n\n"
+                "Try switching to v3 and retry."
             )
+            return
 
-            await message.reply_document(document=file_name, caption=caption)
-            await app.send_document(PREMIUM_LOGS, file_name, caption=caption)
+        all_outputs = []
+        tasks = []
+        
+        if "data" in j2:
+            total_items = len(j2["data"])
+            processed = 0
+            
+            for item in j2["data"]:
+                tasks.append(fetch_item_details(api_base, raw_text2, item, hdr1))
+                if item["material_type"] == "FOLDER":
+                    tasks.append(fetch_folder_contents(api_base, raw_text2, item["id"], hdr1))
+                
+                processed += 1
+                if processed % 5 == 0:
+                    await progress_msg.edit_text(
+                        "🔄 <b>Processing Large Batch</b>\n"
+                        f"├─ Progress: {processed}/{total_items}\n"
+                        f"└─ Current: <code>{item.get('Title', 'Unknown')}</code>"
+                    )
 
+        if tasks:
+            results = await asyncio.gather(*tasks)
+            for res in results:
+                if res:
+                    all_outputs.extend(res)
+
+        if not all_outputs:
+            await progress_msg.edit_text("❌ <b>No content found in this batch</b>")
+            return
+
+        video_count = sum(1 for url in all_outputs if any(ext in url.lower() for ext in ['.mp4', '.m3u8', '.mpd']))
+        pdf_count = sum(1 for url in all_outputs if '.pdf' in url.lower())
+        encrypted_count = sum(1 for url in all_outputs if '*' in url)
+
+        file_name = f"{app_name}_{sanitized_course_name}_{int(datetime.now().timestamp())}.txt"
+        with open(file_name, 'w', encoding='utf-8') as f:
+            f.write('\n'.join(all_outputs))
+
+        end_time = datetime.now()
+        duration = end_time - datetime.fromtimestamp(start_time)
+        minutes, seconds = divmod(duration.total_seconds(), 60)
+
+        caption = (
+            f"🎓 <b>COURSE EXTRACTED</b> 🎓\n\n"
+            f"📱 <b>APP:</b> {app_name}\n"
+            f"📚 <b>BATCH:</b> {sanitized_course_name}\n"
+            f"⏱ <b>EXTRACTION TIME:</b> {int(minutes):02d}:{int(seconds):02d}\n"
+            f"📅 <b>DATE:</b> {datetime.now(pytz.timezone('Asia/Kolkata')).strftime('%d-%m-%Y %H:%M:%S')} IST\n\n"
+            f"📊 <b>CONTENT STATS</b>\n"
+            f"├─ 📁 Total Links: {len(all_outputs)}\n"
+            f"├─ 🎬 Videos: {video_count}\n"
+            f"├─ 📄 PDFs: {pdf_count}\n"
+            f"└─ 🔐 Encrypted: {encrypted_count}\n\n"
+            f"🚀 <b>Extracted by:</b> @{(await app.get_me()).username}\n\n"
+            f"<code>╾───• {BOT_TEXT} •───╼</code>"
+        )
+
+        await message.reply_document(document=file_name, caption=caption)
+        await app.send_document(PREMIUM_LOGS, file_name, caption=caption)
+
+        try:
+            os.remove(file_name)
+        except:
+            pass
+
+        for msg in [input2, m1, m2]:
             try:
-                os.remove(file_name)
+                await msg.delete()
             except:
                 pass
 
-            for msg in [input2, m1, m2]:
-                try:
-                    await msg.delete()
-                except:
-                    pass
-
-            await progress_msg.edit_text(
-                "✅ <b>Extraction completed successfully!</b>\n\n"
-                f"📊 𝗙𝗶𝗻𝗮𝗹 𝗦𝘁𝗮𝘁𝘂𝘀:\n"
-                f"📚 Processed: {total_items} items\n"
-                f"📤 File has been uploaded\n\n"
-                f"Thank you for using @IFSAshuAbhiBot Extractor Pro! 🌟"
-            )
+        await progress_msg.edit_text(
+            "✅ <b>Extraction completed successfully!</b>\n\n"
+            f"📊 𝗙𝗶𝗻𝗮𝗹 𝗦𝘁𝗮𝘁𝘂𝘀:\n"
+            f"📚 Processed: {total_items} items\n"
+            f"📤 File has been uploaded\n\n"
+            f"Thank you for using @IFSAshuAbhiBot Extractor Pro! 🌟"
+        )
 
     except Exception as e:
         logger.error(f"Error in v2_new: {e}")
