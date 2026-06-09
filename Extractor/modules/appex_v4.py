@@ -295,22 +295,14 @@ async def appex_v5_txt(app, message, api, name):
     try:
         r = scraper.get(f"{api_base}/get/mycoursev2?userid={userid}", headers=hdr1)
         if r.status_code != 200:
-            return await message.reply_text(f"❌ **Server blocked the request!**
-Status: {r.status_code}
-Response:
-`{r.text[:500]}`")
+            return await message.reply_text(f"❌ **Server blocked the request!**\nStatus: {r.status_code}\nResponse:\n`{r.text[:500]}`")
         mc1 = r.json()
 
     except Exception as e:
         error_msg = (
-            "❌ <b>An error occurred during course fetching</b>
-
-"
-            f"Error details: <code>{str(e)}</code>
-"
-            f"Response snippet: <code>{r.text[:200] if 'r' in locals() else 'None'}</code>
-
-"
+            "❌ <b>An error occurred during course fetching</b>\n\n"
+            f"Error details: <code>{str(e)}</code>\n"
+            f"Response snippet: <code>{r.text[:200] if 'r' in locals() else 'None'}</code>\n\n"
             "Please try again or contact support."
         )
         return await message.reply_text(error_msg)
