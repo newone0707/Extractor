@@ -1,162 +1,213 @@
+import os
 import re
 import json
-import urllib.parse
-import requests
-from pyrogram import filters
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+import logging
+import asyncio
+import aiohttp
+from pyrogram import Client, filters
 from Extractor import app
+from config import BOT_TEXT
 
-# Constants for Edmingle
-BASE_URL = "https://jchemistry-api.edmingle.com/nuSource/api/v1"
+def sanitize_filename(name):
+    name = re.sub(r'[<>:"/\\|?*]', '_', str(name))
+    name = re.sub(r'\s+', '_', name)
+    name = re.sub(r'_+', '_', name)
+    name = name.strip('_. ')
+    return name if name else "Unknown_Course"
 
-async def get_org_id(token):
-    headers = {
-        "APIKEY": token,
-        "User-Agent": "Mozilla/5.0"
-    }
-    r = requests.get(f"{BASE_URL}/user/usermeta", headers=headers).json()
-    orgs = r.get("user", {}).get("org_data", [])
-    if orgs:
-        return str(orgs[0].get("organization_id"))
-    return ""
+async def jchemistry(app: Client, m):
+    loop = asyncio.get_event_loop()
+    CONNECTOR = aiohttp.TCPConnector(limit=100, loop=loop)
 
-async def jchemistry(app, message):
-    input1 = await app.ask(message.chat.id, text="Send **ID & Password** in this manner, otherwise, the bot will not respond.\n\nSend like this: **ID*Password**")
-    raw_text = input1.text
+    async with aiohttp.ClientSession(connector=CONNECTOR, loop=loop) as session:
+        editable = await m.reply_text("Fetching J Chemistry courses... Please wait.")
+        
+        try:
+            # Step 1: Fetch public frontend
+            async with session.get("https://jchemistry.edmingle.com/courses", timeout=15) as resp:
+                html = await resp.text()
+            
+            # Extract setUserDepts
+            json_str = None
+            m_search = re.search(r'setUserDepts\(\[(.*?)\]\);', html, re.DOTALL)
+            if m_search:
+                json_str = '[' + m_search.group(1) + ']'
+            else:
+                await editable.edit("Could not find course data on J Chemistry website.")
+                return
+
+            data = json.loads(json_str)
+            if not data:
+                await editable.edit("No data found.")
+                return
+                
+            bundles = data[0].get('course_bundles', [])
+            if not bundles:
+                await editable.edit("No active courses found on J Chemistry.")
+                return
+                
+            text = ''
+            for cnt, batch in enumerate(bundles):
+                name = batch.get("bundle_name", "Unknown")
+                price = batch.get("cost", "Free")
+                text += f"{cnt + 1}. {name} - Rs.{price}\n"
+                
+            course_details_file = f"{m.from_user.id}_jchemistry_courses.txt"
+            with open(course_details_file, 'w', encoding='utf-8') as f:
+                f.write(text)
+                
+            caption = (
+                f"🎓 <b>J CHEMISTRY COURSES</b> 🎓\n\n"
+                f"📚 <b>TOTAL COURSES:</b> {len(bundles)}\n\n"
+                f"<code>╾───• @PRO_TXT_EXTRATOR_BOT •───╼</code>\n\n"
+                "Send the index number to download course"
+            )
+            
+            await editable.delete()
+            msg = await m.reply_document(
+                document=course_details_file,
+                caption=caption,
+                file_name="jchemistry_courses.txt"
+            )
+            
+            try:
+                os.remove(course_details_file)
+            except:
+                pass
+                
+            # Listen for index
+            try:
+                input_msg = await app.listen(chat_id=m.chat.id, filters=filters.user(m.from_user.id), timeout=120)
+                user_choice = input_msg.text.strip()
+                await input_msg.delete(True)
+            except:
+                await msg.edit("❌ <b>Timeout!</b>\n\nYou took too long to respond.")
+                return
+                
+            if not user_choice.isdigit() or not (1 <= int(user_choice) <= len(bundles)):
+                await msg.edit("❌ <b>Invalid Input!</b>\n\nPlease send a valid index number.")
+                return
+                
+            selected_idx = int(user_choice) - 1
+            selected_bundle = bundles[selected_idx]
+            
+            bundle_name = selected_bundle.get("bundle_name", "Unknown Batch")
+            inst_bundle_id = selected_bundle.get("institution_bundle_id")
+            course_ids = selected_bundle.get("course_ids", [])
+            
+            clean_batch_name = sanitize_filename(bundle_name)
+            
+            status_msg = await m.reply_text(
+                "🔄 <b>Processing Course</b>\n"
+                f"└─ Current: <code>{bundle_name}</code>\n"
+                f"Extracting content without login..."
+            )
+            
+            all_outputs = []
+            
+            api_base = "https://jchemistry-api.edmingle.com/nuSource/api/v1"
+            headers = {
+                "User-Agent": "Mozilla/5.0",
+                "ORGID": "267" # J Chemistry Org ID
+            }
+            
+            for course_id in course_ids:
+                url = f"{api_base}/public/tutor/class/curriculum/{course_id}?institution_bundle_id={inst_bundle_id}"
+                async with session.get(url, headers=headers) as r_api:
+                    if r_api.status == 200:
+                        curriculum_data = await r_api.json()
+                        course_curr = curriculum_data.get('course_curriculum', {})
+                        sections = course_curr.get('resources', [])
+                        
+                        for sec in sections:
+                            sec_name = sec.get('section_name', 'Unknown Section')
+                            items = sec.get('resources', [])
+                            if items:
+                                all_outputs.append(f"\n{sec_name}\n\n")
+                                for item in items:
+                                    mat_name = item.get('material_name', 'Untitled')
+                                    mat_type = item.get('type')
+                                    
+                                    if mat_type in [7, 'video', 'video/mp4', 'video/vimeo']:
+                                        # It's a video
+                                        v_url = ""
+                                        if item.get('drm_url'):
+                                            v_url = item.get('drm_url')
+                                        elif item.get('vdocipher_video_id'):
+                                            v_url = f"https://player.vdocipher.com/v2/?otp=dummy&playbackInfo=dummy&videoId={item.get('vdocipher_video_id')}"
+                                        elif item.get('gumlet_asset_id'):
+                                            v_url = f"https://video.gumlet.io/{item.get('gumlet_asset_id')}/main.m3u8"
+                                        elif item.get('vimeo_url'):
+                                            v_url = str(item.get('vimeo_url'))
+                                        elif item.get('videocrypt_video_id'):
+                                            v_url = f"videocrypt://{item.get('videocrypt_video_id')}"
+                                            
+                                        if v_url:
+                                            all_outputs.append(f"{mat_name}:{v_url}\n")
+                                        else:
+                                            all_outputs.append(f"{mat_name}:[Video ID Missing]\n")
+                                            
+                                    elif mat_type in [2, 'application/pdf', 'document']:
+                                        # It's a PDF
+                                        f_name = item.get('file_name', 'document.pdf')
+                                        if f_name and f_name.endswith('.pdf'):
+                                            f_name = f"https://dragoapi.vercel.app/pdf/{f_name}"
+                                        all_outputs.append(f"{mat_name}:{f_name}\n")
+                                        
+            if len(all_outputs) == 0:
+                await status_msg.edit("❌ No content found for this course.")
+                return
+                
+            clean_file_name = f"{m.from_user.id}_{clean_batch_name}"
+            content = ''.join(all_outputs)
+            
+            with open(f"{clean_file_name}.txt", 'w', encoding='utf-8') as f:
+                f.write(content)
+                
+            video_count = sum(1 for line in all_outputs if ":" in line and ".pdf" not in line.lower())
+            pdf_count = sum(1 for line in all_outputs if ":" in line and ".pdf" in line.lower())
+            total_links = video_count + pdf_count
+            
+            caption = (
+                f"🎓 <b>J CHEMISTRY EXTRACTED</b> 🎓\n\n"
+                f"📚 <b>BATCH:</b> {bundle_name}\n\n"
+                f"📊 <b>CONTENT STATS</b>\n"
+                f"├─ 📁 Total Items: {total_links}\n"
+                f"├─ 🎬 Videos: {video_count}\n"
+                f"└─ 📄 PDFs: {pdf_count}\n\n"
+                f"🚀 <b>Extracted by</b>: @{(await app.get_me()).username}\n\n"
+                f"<code>╾───• {BOT_TEXT} •───╼</code>"
+            )
+            
+            with open(f"{clean_file_name}.txt", 'rb') as f:
+                await msg.delete()
+                await status_msg.delete()
+                await m.reply_document(
+                    document=f,
+                    caption=caption,
+                    file_name=f"{clean_batch_name}.txt"
+                )
+                
+            try:
+                os.remove(f"{clean_file_name}.txt")
+            except:
+                pass
+                
+        except Exception as e:
+            await editable.edit(f"Error: {str(e)}")
+            
+        finally:
+            await session.close()
+            await CONNECTOR.close()
+
+@app.on_callback_query(filters.regex("^jchemistry_$"))
+async def jchemistry_callback(client, callback_query):
     try:
-        ph, pas = raw_text.split("*")
-    except ValueError:
-        await message.reply_text("Invalid format! Send as ID*Password")
-        return
         
-    await input1.delete(True)
-    
-    msg = await message.reply_text("Logging in...")
-    
-    url = f"{BASE_URL}/tutor/login"
-    payload = {
-        "username": ph,
-        "password": pas,
-        "persistent_login": True
-    }
-    data = {"JSONString": json.dumps(payload)}
-    
-    try:
-        r = requests.post(url, data=data).json()
-        
-        if r.get("message") != "Login successful":
-            await msg.edit_text(f"Login Failed! Error: {r.get('message', 'Invalid Credentials')}")
-            return
-            
-        token = r.get("user", {}).get("apikey")
-        
-        # We need the Org ID to fetch courses
-        org_id = await get_org_id(token)
-        
-        headers = {
-            "APIKEY": token,
-            "ORGID": org_id,
-            "User-Agent": "Mozilla/5.0"
-        }
-        
-        # Fetch batches
-        await msg.edit_text("Login Successful! Fetching batches...")
-        
-        # tag_ids=9 usually means purchased courses in Edmingle
-        course_url = f"{BASE_URL}/student/masterbatches?tag_ids=9"
-        r2 = requests.get(course_url, headers=headers).json()
-        
-        batches = r2.get("batches", [])
-        if not batches:
-            await msg.edit_text("No purchased batches found!")
-            return
-            
-        keyboard = []
-        for batch in batches:
-            name = batch.get("name", "Unknown Course")
-            course_id = batch.get("id")
-            # Format: app_courseId_orgId_token
-            callback_data = f"jchem_{course_id}_{org_id}_{token[:10]}"
-            keyboard.append([InlineKeyboardButton(name, callback_data=callback_data)])
-            
-        # Store full token locally since callback data has length limits
-        app.jchem_tokens = getattr(app, 'jchem_tokens', {})
-        app.jchem_tokens[token[:10]] = token
-            
-        await msg.edit_text(
-            f"**Login Successful!**\nFound {len(batches)} batches.",
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-        
+        await callback_query.answer()
+        await process_jchemistry(client, callback_query.message, m.from_user.id)
     except Exception as e:
-        await msg.edit_text(f"Error during login: {str(e)}")
-
-@app.on_callback_query(filters.regex(r"^jchem_"))
-async def jchemistry_course(client, query):
-    try:
-        data = query.data.split("_")
-        course_id = data[1]
-        org_id = data[2]
-        short_token = data[3]
-        
-        token = client.jchem_tokens.get(short_token)
-        if not token:
-            await query.answer("Session expired. Please login again.", show_alert=True)
-            return
-            
-        headers = {
-            "APIKEY": token,
-            "ORGID": org_id,
-            "User-Agent": "Mozilla/5.0"
-        }
-        
-        await query.message.edit_text("Fetching subjects... please wait.")
-        
-        # Get subjects for course
-        url = f"{BASE_URL}/student/masterbatches/classes/{course_id}?get_tags=1&show_overview=1"
-        r = requests.get(url, headers=headers).json()
-        
-        subjects = r.get("classes", [])
-        if not subjects:
-            await query.message.edit_text("No subjects found in this course.")
-            return
-            
-        # Generate Txt format
-        txt = f"**Course Data**\n\n"
-        for sub in subjects:
-            sub_id = sub.get("class_id")
-            sub_name = sub.get("name")
-            txt += f"📚 **{sub_name}**\n"
-            
-            # Get videos and PDFs inside subject
-            res_url = f"{BASE_URL}/student/classcurriculum/{sub_id}/resources"
-            r2 = requests.get(res_url, headers=headers).json()
-            
-            resources = r2.get("resources", [])
-            for res in resources:
-                if res.get("resource_type") == "video":
-                    v_url = res.get("video_url", "No Link")
-                    if not v_url or v_url == "No Link":
-                        if res.get("vdocipher_video_id"):
-                            v_url = f"https://player.vdocipher.com/v2/?otp=dummy&playbackInfo=dummy&videoId={res.get('vdocipher_video_id')}"
-                        elif res.get("gumlet_asset_id"):
-                            v_url = f"https://video.gumlet.io/{res.get('gumlet_asset_id')}/main.m3u8"
-                        elif res.get("videocrypt_video_id"):
-                            v_url = f"videocrypt://{res.get('videocrypt_video_id')}"
-                    v_url = res.get("video_url", "No Link")
-                    txt += f"🎥 {res.get('title')}: {v_url}\n"
-                elif res.get("resource_type") in ["document", "pdf"]:
-                    d_url = res.get("media_url", "No Link")
-                    txt += f"📄 {res.get('title')}: {d_url}\n"
-            
-            txt += "\n"
-            
-        # Send text file
-        with open("jchemistry_course.txt", "w", encoding="utf-8") as f:
-            f.write(txt)
-            
-        await query.message.reply_document("jchemistry_course.txt")
-        await query.message.delete()
-        
-    except Exception as e:
-        await query.message.edit_text(f"Error fetching course data: {str(e)}")
+        try:
+            await callback_query.message.reply_text(f"Error: {str(e)}")
+        except:
+            pass
