@@ -794,10 +794,7 @@ async def handle_callback(client, query):
         await ak_start(app, query.message)
     elif query.data == "exampur_txt":
         await exampur_txt(app, query.message)
-    elif query.data == "futurekul_":
-        api = "futurekulcollegeapi.classx.co.in"
-        name = "Futurekul"
-        await appex_v5_txt(app, query.message, api, name, predefined_credentials="yolesa9970@5nek.com*123123123")
+
 
 def get_alphabet_keyboard():
     """Create a keyboard with A-Z buttons in a modern style"""
