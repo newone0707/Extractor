@@ -205,7 +205,7 @@ async def jchemistry_callback(client, callback_query):
     try:
         
         await callback_query.answer()
-        await process_jchemistry(client, callback_query.message, m.from_user.id)
+        await jchemistry(client, callback_query.message)
     except Exception as e:
         try:
             await callback_query.message.reply_text(f"Error: {str(e)}")
