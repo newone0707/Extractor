@@ -134,13 +134,18 @@ async def jchemistry(app: Client, m, user_id=None):
                                         # It's a video
                                         v_url = ""
                                         if item.get('drm_url'):
-                                            v_url = item.get('drm_url')
+                                            drm = item.get('drm_url')
+                                            if not drm.startswith('http'):
+                                                v_id = drm.replace('-', '')
+                                                v_url = f"https://player.vdocipher.com/v2/?otp=dummy&playbackInfo=dummy&videoId={v_id}"
+                                            else:
+                                                v_url = drm
                                         elif item.get('vdocipher_video_id'):
                                             v_url = f"https://player.vdocipher.com/v2/?otp=dummy&playbackInfo=dummy&videoId={item.get('vdocipher_video_id')}"
                                         elif item.get('gumlet_asset_id'):
                                             v_url = f"https://video.gumlet.io/{item.get('gumlet_asset_id')}/main.m3u8"
                                         elif item.get('vimeo_url'):
-                                            v_url = str(item.get('vimeo_url'))
+                                            v_url = f"https://vimeo.com/{item.get('vimeo_url')}"
                                         elif item.get('videocrypt_video_id'):
                                             v_url = f"videocrypt://{item.get('videocrypt_video_id')}"
                                             
