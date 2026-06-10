@@ -134,13 +134,13 @@ async def process_jchemistry(bot: Client, m, user_id: int):
                                         if item.get('drm_url'):
                                             v_url = item.get('drm_url')
                                         elif item.get('vdocipher_video_id'):
-                                            v_url = item.get('vdocipher_video_id')
+                                            v_url = f"https://player.vdocipher.com/v2/?otp=dummy&playbackInfo=dummy&videoId={item.get('vdocipher_video_id')}"
                                         elif item.get('gumlet_asset_id'):
-                                            v_url = item.get('gumlet_asset_id')
+                                            v_url = f"https://video.gumlet.io/{item.get('gumlet_asset_id')}/main.m3u8"
                                         elif item.get('vimeo_url'):
                                             v_url = str(item.get('vimeo_url'))
                                         elif item.get('videocrypt_video_id'):
-                                            v_url = item.get('videocrypt_video_id')
+                                            v_url = f"videocrypt://{item.get('videocrypt_video_id')}"
                                             
                                         if v_url:
                                             all_outputs.append(f"{mat_name}:{v_url}\n")
@@ -150,6 +150,8 @@ async def process_jchemistry(bot: Client, m, user_id: int):
                                     elif mat_type in [2, 'application/pdf', 'document']:
                                         # It's a PDF
                                         f_name = item.get('file_name', 'document.pdf')
+                                        if f_name and f_name.endswith('.pdf'):
+                                            f_name = f"https://dragoapi.vercel.app/pdf/{f_name}"
                                         all_outputs.append(f"{mat_name}:{f_name}\n")
                                         
             if len(all_outputs) == 0:
