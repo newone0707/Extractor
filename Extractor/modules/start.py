@@ -91,6 +91,11 @@ custom_button = [[
                   InlineKeyboardButton("🗻 Pɪɴɴᴀᴄʟᴇ 🗻", callback_data="ssc_"),
                   InlineKeyboardButton("👷‍♂️ Cɪᴠɪʟ Gᴜʀᴜᴊɪ 👷‍♂️", callback_data="civil_guru")
                 ],[
+                  InlineKeyboardButton("🧪 J Cʜᴇᴍɪsᴛʀʏ 🧪", callback_data="jchemistry_"),
+                  InlineKeyboardButton("📚 IFAS 📚", callback_data="ifas_")
+                ],[
+                  InlineKeyboardButton("🎯 Tᴀɪʏᴀʀɪ Kᴀʀʟᴏ 🎯", callback_data="taiyari_karlo")
+                ],[
                   InlineKeyboardButton("𝐁 𝐀 𝐂 𝐊", callback_data="modes_")
                 ]]
 
