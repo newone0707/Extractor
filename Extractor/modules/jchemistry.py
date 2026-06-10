@@ -2,6 +2,7 @@ import re
 import json
 import urllib.parse
 import requests
+from pyrogram import filters
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from Extractor import app
 
