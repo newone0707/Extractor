@@ -15,7 +15,9 @@ def sanitize_filename(name):
     name = name.strip('_. ')
     return name if name else "Unknown_Course"
 
-async def jchemistry(app: Client, m):
+async def jchemistry(app: Client, m, user_id=None):
+    if user_id is None:
+        user_id = getattr(m.from_user, 'id', m.chat.id)
     loop = asyncio.get_event_loop()
     CONNECTOR = aiohttp.TCPConnector(limit=100, loop=loop)
 
@@ -52,7 +54,7 @@ async def jchemistry(app: Client, m):
                 price = batch.get("cost", "Free")
                 text += f"{cnt + 1}. {name} - Rs.{price}\n"
                 
-            course_details_file = f"{m.from_user.id}_jchemistry_courses.txt"
+            course_details_file = f"{user_id}_jchemistry_courses.txt"
             with open(course_details_file, 'w', encoding='utf-8') as f:
                 f.write(text)
                 
@@ -77,7 +79,7 @@ async def jchemistry(app: Client, m):
                 
             # Listen for index
             try:
-                input_msg = await app.listen(chat_id=m.chat.id, filters=filters.user(m.from_user.id), timeout=120)
+                input_msg = await app.listen(chat_id=m.chat.id, filters=filters.user(user_id), timeout=120)
                 user_choice = input_msg.text.strip()
                 await input_msg.delete(True)
             except:
@@ -158,7 +160,7 @@ async def jchemistry(app: Client, m):
                 await status_msg.edit("❌ No content found for this course.")
                 return
                 
-            clean_file_name = f"{m.from_user.id}_{clean_batch_name}"
+            clean_file_name = f"{user_id}_{clean_batch_name}"
             content = ''.join(all_outputs)
             
             with open(f"{clean_file_name}.txt", 'w', encoding='utf-8') as f:
@@ -205,7 +207,7 @@ async def jchemistry_callback(client, callback_query):
     try:
         
         await callback_query.answer()
-        await jchemistry(client, callback_query.message)
+        await jchemistry(client, callback_query.message, callback_query.from_user.id)
     except Exception as e:
         try:
             await callback_query.message.reply_text(f"Error: {str(e)}")
