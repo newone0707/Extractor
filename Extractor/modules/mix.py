@@ -111,7 +111,7 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
 
         if vl:
             dvl = decrypt(vl)
-            if dvl and ".pdf" not in dvl.lower():
+            if dvl:
                 outputs.append(f"{prefix}{vt} : {dvl}")
         elif not fl:
             for link in data.get("encrypted_links", []):
@@ -130,19 +130,21 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                         outputs.append(f"{vt}:{da}")
                         break
 
-        if data.get("material_type") == "VIDEO":
-            for pdf_num in range(1, 3):
-                pdf_link = data.get(f"pdf_link{'' if pdf_num == 1 else str(pdf_num)}", "")
-                pdf_key = data.get(f"pdf{'_' if pdf_num == 1 else str(pdf_num)}_encryption_key", "")
-                
-                if pdf_link and pdf_key:
-                    dp = decrypt(pdf_link)
-                    dpk = decrypt(pdf_key)
-                    if dp:
-                        if dpk == "abcdefg":
-                            outputs.append(f"{vt}:{dp}")
-                        else:
+        for pdf_num in range(1, 3):
+            pdf_link = data.get(f"pdf_link{'' if pdf_num == 1 else str(pdf_num)}", "")
+            pdf_key = data.get(f"pdf{'_' if pdf_num == 1 else str(pdf_num)}_encryption_key", "")
+            
+            if pdf_link:
+                dp = decrypt(pdf_link)
+                if dp:
+                    if pdf_key:
+                        dpk = decrypt(pdf_key)
+                        if dpk and dpk != "abcdefg":
                             outputs.append(f"{vt}:{dp}*{dpk}")
+                        else:
+                            outputs.append(f"{vt}:{dp}")
+                    else:
+                        outputs.append(f"{vt}:{dp}")
 
         return outputs
 
