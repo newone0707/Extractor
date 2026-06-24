@@ -88,7 +88,7 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
         outputs = []
         prefix = f"[{current_path}] " if current_path else ""
 
-        r4 = await safe_fetch_json(f"{api_base}/get/fetchVideoDetailsById?course_id={course_id}&folder_wise_course=1&ytflag=0&video_id={fi}", headers)
+        r4 = await safe_fetch_json(f"{api_base}/get/fetchVideoDetailsById?course_id={course_id}&folder_wise_course=1&ytflag=1&video_id={fi}", headers)
         if not r4 or not r4.get("data"):
             return []
 
