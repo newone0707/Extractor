@@ -215,6 +215,9 @@ async def fetch_folder_contents(api_base, course_id, folder_id, headers, current
                 is_folder = str(item.get('is_folder')) == "1" or str(item_type) in ["2", "0"] or str(item.get('material_type')).upper() == "FOLDER"
                 
                 new_path = f"{current_path} -> {item_name}" if current_path else item_name
+                
+                await asyncio.sleep(0.5)
+                
                 if is_folder:
                     res = await fetch_folder_contents(api_base, course_id, item.get("id"), headers, new_path, userid)
                 else:
@@ -246,7 +249,8 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
             url += f"&userid={userid}"
             
         j2 = await safe_fetch_json(url, hdr1)
-
+        logger.info(f"ROOT FOLDER JSON: {json.dumps(j2)}")
+        
         if not j2 or not j2.get("data"):
             await progress_msg.edit_text(
                 "❌ <b>No Content Found</b>\n\n"
@@ -264,6 +268,8 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
             for item in j2["data"]:
                 item_type = item.get('resource_type', item.get('type'))
                 is_folder = str(item.get('is_folder')) == "1" or str(item_type) in ["2", "0"] or str(item.get('material_type')).upper() == "FOLDER"
+                
+                await asyncio.sleep(0.5)
                 
                 if is_folder:
                     res = await fetch_folder_contents(api_base, raw_text2, item.get("id"), hdr1, item.get("Title", ""), userid)
