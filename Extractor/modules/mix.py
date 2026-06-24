@@ -291,9 +291,9 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
             await progress_msg.edit_text("❌ <b>No content found in this batch</b>")
             return
 
-        video_count = sum(1 for url in all_outputs if any(ext in url.lower() for ext in ['.mp4', '.m3u8', '.mpd']))
-        pdf_count = sum(1 for url in all_outputs if '.pdf' in url.lower())
-        encrypted_count = sum(1 for url in all_outputs if '*' in url)
+        video_count = sum(1 for url in all_outputs if any(ext in url.lower() for ext in ['.mp4', '.m3u8', '.mpd', '.mkv', '.zip', '/videos/']))
+        pdf_count = sum(1 for url in all_outputs if any(ext in url.lower() for ext in ['.pdf', 'paid_course']))
+        encrypted_count = sum(1 for url in all_outputs if 'encrypted' in url.lower() or '*' in url)
 
         file_name = f"{app_name}_{sanitized_course_name}_{int(datetime.now().timestamp())}.txt"
         with open(file_name, 'w', encoding='utf-8') as f:
