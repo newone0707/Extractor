@@ -424,7 +424,10 @@ async def appxwp_callback(client, callback_query):
         )
         
         user_id = callback_query.from_user.id
-        
+        from config import OWNER_ID
+        if user_id != OWNER_ID:
+            await callback_query.answer("⚠️ Not Authorized: Only Owner can use this feature!", show_alert=True)
+            return
         try:
             # Process with timeout
             result = await process_with_timeout(process_appxwp, client, callback_query.message, user_id)
