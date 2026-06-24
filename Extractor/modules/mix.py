@@ -125,7 +125,10 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                         outputs.append(f"{vt}:{da}*{k2}")
                         break
                 elif a:
-                    da = decrypt(a)
+                    if not a.startswith('http') and ':' in a:
+                        da = decrypt(a)
+                    else:
+                        da = a
                     if da:
                         outputs.append(f"{vt}:{da}")
                         break
@@ -135,7 +138,12 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
             pdf_key = data.get(f"pdf{'_' if pdf_num == 1 else str(pdf_num)}_encryption_key", "")
             
             if pdf_link:
-                dp = decrypt(pdf_link)
+                dp = ""
+                if not pdf_link.startswith('http') and ':' in pdf_link:
+                    dp = decrypt(pdf_link)
+                else:
+                    dp = pdf_link
+                
                 if dp:
                     if pdf_key:
                         dpk = decrypt(pdf_key)
@@ -163,11 +171,15 @@ async def fetch_folder_contents(api_base, course_id, folder_id, headers, current
         if "data" in j:
             for item in j["data"]:
                 item_name = item.get("name") or item.get("Title", "") or item.get("title", "")
-                if item.get("material_type") == "FOLDER":
-                    new_path = f"{current_path} → {item_name}" if current_path else item_name
+                item_type = item.get('resource_type', item.get('type'))
+                is_folder = str(item.get('is_folder')) == "1" or str(item_type) in ["2", "0"] or str(item.get('material_type')).upper() == "FOLDER"
+                
+                if is_folder:
+                    new_path = f"{current_path} -> {item_name}" if current_path else item_name
                     tasks.append(fetch_folder_contents(api_base, course_id, item["id"], headers, new_path))
                 else:
-                    tasks.append(fetch_item_details(api_base, course_id, item, headers, current_path))
+                    new_path = f"{current_path} -> {item_name}" if current_path else item_name
+                    tasks.append(fetch_item_details(api_base, course_id, item, headers, new_path))
 
         if tasks:
             results = await asyncio.gather(*tasks)
@@ -205,9 +217,13 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
             processed = 0
             
             for item in j2["data"]:
-                tasks.append(fetch_item_details(api_base, raw_text2, item, hdr1))
-                if item["material_type"] == "FOLDER":
-                    tasks.append(fetch_folder_contents(api_base, raw_text2, item["id"], hdr1))
+                item_type = item.get('resource_type', item.get('type'))
+                is_folder = str(item.get('is_folder')) == "1" or str(item_type) in ["2", "0"] or str(item.get('material_type')).upper() == "FOLDER"
+                
+                if is_folder:
+                    tasks.append(fetch_folder_contents(api_base, raw_text2, item["id"], hdr1, item.get("Title", "")))
+                else:
+                    tasks.append(fetch_item_details(api_base, raw_text2, item, hdr1))
                 
                 processed += 1
                 if processed % 5 == 0:
