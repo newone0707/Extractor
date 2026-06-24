@@ -1082,7 +1082,7 @@ async def html_to_text_command(client: Client, message: Message):
                 url = requests.utils.unquote(url)
                 text_content += f"{name}:{url}\n"
                 
-        text_content += "\n @Saini_extractor_bot "
+        text_content += "\n @adxcontactbot "
                 
         # Save as text file
         txt_path = file_path.rsplit('.', 1)[0] + '.txt'
