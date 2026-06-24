@@ -81,14 +81,18 @@ async def safe_fetch_json(url, headers, max_retries=4):
         await asyncio.sleep(2 * (attempt + 1))
     return None
 
-async def fetch_item_details(api_base, course_id, item, headers, current_path=""):
+async def fetch_item_details(api_base, course_id, item, headers, current_path="", userid=""):
     try:
         fi = item.get("id")
         vt = item.get("name") or item.get("Title", "") or item.get("title", "")
         outputs = []
         prefix = f"[{current_path}] " if current_path else ""
+        
+        url = f"{api_base}/get/fetchVideoDetailsById?course_id={course_id}&folder_wise_course=1&ytflag=1&video_id={fi}"
+        if userid:
+            url += f"&userid={userid}"
 
-        r4 = await safe_fetch_json(f"{api_base}/get/fetchVideoDetailsById?course_id={course_id}&folder_wise_course=1&ytflag=1&video_id={fi}", headers)
+        r4 = await safe_fetch_json(url, headers)
         if not r4 or not r4.get("data"):
             return []
 
@@ -121,8 +125,8 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                     k1 = decrypt(k)
                     k2 = decode_base64(k1)
                     da = decrypt(a)
-                    if da and k2:
-                        outputs.append(f"{vt}:{da}*{k2}")
+                    if da:
+                        outputs.append(f"{prefix}{vt} : {da}*{k2}")
                         break
                 elif a:
                     if not a.startswith('http') and ':' in a:
@@ -130,7 +134,7 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                     else:
                         da = a
                     if da:
-                        outputs.append(f"{vt}:{da}")
+                        outputs.append(f"{prefix}{vt} : {da}")
                         break
 
         for pdf_num in range(1, 3):
@@ -148,22 +152,33 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                     if pdf_key:
                         dpk = decrypt(pdf_key)
                         if dpk and dpk != "abcdefg":
-                            outputs.append(f"{vt}:{dp}*{dpk}")
+                            outputs.append(f"{prefix}{vt} : {dp}*{dpk}")
                         else:
-                            outputs.append(f"{vt}:{dp}")
+                            outputs.append(f"{prefix}{vt} : {dp}")
                     else:
-                        outputs.append(f"{vt}:{dp}")
+                        outputs.append(f"{prefix}{vt} : {dp}")
 
-        return outputs
+        # Remove duplicates while preserving order
+        seen = set()
+        unique_outputs = []
+        for x in outputs:
+            if x not in seen:
+                seen.add(x)
+                unique_outputs.append(x)
+        return unique_outputs
 
     except Exception as e:
         logger.error(f"Error fetching item details: {e}")
         return []
 
-async def fetch_folder_contents(api_base, course_id, folder_id, headers, current_path=""):
+async def fetch_folder_contents(api_base, course_id, folder_id, headers, current_path="", userid=""):
     try:
         outputs = []
-        j = await safe_fetch_json(f"{api_base}/get/folder_contentsv2?course_id={course_id}&parent_id={folder_id}&folder_wise_course=1", headers)
+        url = f"{api_base}/get/folder_contentsv2?course_id={course_id}&parent_id={folder_id}&folder_wise_course=1"
+        if userid:
+            url += f"&userid={userid}"
+            
+        j = await safe_fetch_json(url, headers)
         if not j:
             return []
 
@@ -176,10 +191,10 @@ async def fetch_folder_contents(api_base, course_id, folder_id, headers, current
                 
                 if is_folder:
                     new_path = f"{current_path} -> {item_name}" if current_path else item_name
-                    tasks.append(fetch_folder_contents(api_base, course_id, item["id"], headers, new_path))
+                    tasks.append(fetch_folder_contents(api_base, course_id, item["id"], headers, new_path, userid))
                 else:
                     new_path = f"{current_path} -> {item_name}" if current_path else item_name
-                    tasks.append(fetch_item_details(api_base, course_id, item, headers, new_path))
+                    tasks.append(fetch_item_details(api_base, course_id, item, headers, new_path, userid))
 
         if tasks:
             results = await asyncio.gather(*tasks)
@@ -199,8 +214,12 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
             "🔄 <b>Processing Large Batch</b>\n"
             f"└─ Initializing batch: <code>{sanitized_course_name}</code>"
         )
-
-        j2 = await safe_fetch_json(f"{api_base}/get/folder_contentsv2?course_id={raw_text2}&parent_id=-1&folder_wise_course=1", hdr1)
+        
+        url = f"{api_base}/get/folder_contentsv2?course_id={raw_text2}&parent_id=-1&folder_wise_course=1"
+        if userid:
+            url += f"&userid={userid}"
+            
+        j2 = await safe_fetch_json(url, hdr1)
 
         if not j2 or not j2.get("data"):
             await progress_msg.edit_text(
@@ -221,9 +240,9 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
                 is_folder = str(item.get('is_folder')) == "1" or str(item_type) in ["2", "0"] or str(item.get('material_type')).upper() == "FOLDER"
                 
                 if is_folder:
-                    tasks.append(fetch_folder_contents(api_base, raw_text2, item["id"], hdr1, item.get("Title", "")))
+                    tasks.append(fetch_folder_contents(api_base, raw_text2, item["id"], hdr1, item.get("Title", ""), userid))
                 else:
-                    tasks.append(fetch_item_details(api_base, raw_text2, item, hdr1))
+                    tasks.append(fetch_item_details(api_base, raw_text2, item, hdr1, "", userid))
                 
                 processed += 1
                 if processed % 5 == 0:
