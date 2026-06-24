@@ -139,10 +139,10 @@ async def encrypt_handler(client, message):
             caption = (
                 f"࿇ ══━━{mention}━━══ ࿇\n\n"
                 f"🔒 **File Encrypted Successfully**\n\n"
-                f"👤 **Owner:** @IFSAshuAbhiBot \n"
+                f"👤 **Owner:** @adxcontactbot \n"
                 f"ℹ️ **Note:** Use our uploader to download this file\n"
                 f"🕒 **Time:** {time_str}\n\n"
-                f"#Encrypted #@IFSAshuAbhiBot"
+                f"#Encrypted #@adxcontactbot"
             )
             
             # Send encrypted file
@@ -224,9 +224,9 @@ async def decrypt_handler(client, message):
             caption = (
                 f"࿇ ══━━{mention}━━══ ࿇\n\n"
                 f"🔓 **File Decrypted Successfully**\n\n"
-                f"👤 **Owner:** @IFSAshuAbhiBot \n"
+                f"👤 **Owner:** @adxcontactbot \n"
                 f"🕒 **Time:** {time_str}\n\n"
-                f"#Decrypted #@IFSAshuAbhiBot"
+                f"#Decrypted #@adxcontactbot"
             )
             
             # Send decrypted file
