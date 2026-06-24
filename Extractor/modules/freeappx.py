@@ -740,6 +740,10 @@ async def process_appxwp(bot: Client, m: Message, user_id: int):
 async def appxwp_callback(client, callback_query):
     try:
         user_id = callback_query.from_user.id
+        from config import OWNER_ID
+        if user_id != OWNER_ID:
+            await callback_query.answer("⚠️ Not Authorized: Only Owner can use this feature!", show_alert=True)
+            return
         await callback_query.answer()
         processing_msg = await callback_query.message.reply_text("Processing your request...")
         await process_appxwp(client, callback_query.message, user_id)
