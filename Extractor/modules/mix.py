@@ -11,6 +11,7 @@ from config import PREMIUM_LOGS, join,BOT_TEXT
 import os
 import base64
 import time
+import requests
 from datetime import datetime
 from Extractor.core.utils import forward_to_log
 import pytz
@@ -58,7 +59,7 @@ scraper = cloudscraper.create_scraper()
 
 def sync_safe_fetch(url, headers):
     try:
-        r = scraper.get(url, headers=headers)
+        r = requests.get(url, headers=headers, timeout=15)
         if r.status_code == 200:
             js = r.json()
             if str(js.get("status")) in ["200", "1"] or js.get("success"):
@@ -69,7 +70,7 @@ def sync_safe_fetch(url, headers):
         pass
     return None
 
-async def safe_fetch_json(url, headers, max_retries=4):
+async def safe_fetch_json(url, headers, max_retries=10):
     headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
     headers["Accept"] = "application/json, text/plain, */*"
     
@@ -179,13 +180,15 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                 seen.add(x)
                 unique_outputs.append(x)
                 
-        if not unique_outputs:
-            item_link = item.get('file_link') or item.get('pdf_link')
-            if item_link:
-                if not item_link.startswith('http') and ':' in item_link:
-                    dec = decrypt(item_link)
-                    if dec: item_link = dec
-                unique_outputs.append(f"{prefix}{vt} : {item_link}")
+        # Also try to grab folder-level fallback links
+        item_link = item.get('file_link') or item.get('pdf_link')
+        if item_link:
+            if not item_link.startswith('http') and ':' in item_link:
+                dec = decrypt(item_link)
+                if dec: item_link = dec
+            fallback_str = f"{prefix}{vt} : {item_link}"
+            if fallback_str not in seen:
+                unique_outputs.append(fallback_str)
                 
         return unique_outputs
 
