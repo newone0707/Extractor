@@ -81,7 +81,7 @@ async def process_video(session, api_base, bi, si, sn, ti, tn, video, hdr1):
     lines = []
     
     try:
-        r4 = await fetch(session, f"{api_base}/get/fetchVideoDetailsById?course_id={bi}&video_id={vi}&ytflag=0&folder_wise_course=0", hdr1)
+        r4 = await fetch(session, f"{api_base}/get/fetchVideoDetailsById?course_id={bi}&video_id={vi}&ytflag=1&folder_wise_course=1", hdr1)
         
         if not r4 or not r4.get("data"):
             print(f"Skipping video ID {vi}: No data found.")
