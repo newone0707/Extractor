@@ -216,7 +216,7 @@ async def fetch_folder_contents(api_base, course_id, folder_id, headers, current
                 
                 new_path = f"{current_path} -> {item_name}" if current_path else item_name
                 if is_folder:
-                    res = await fetch_folder_contents(api_base, course_id, item["id"], headers, new_path, userid)
+                    res = await fetch_folder_contents(api_base, course_id, item.get("id"), headers, new_path, userid)
                 else:
                     res = await fetch_item_details(api_base, course_id, item, headers, new_path, userid)
                 
@@ -266,7 +266,7 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
                 is_folder = str(item.get('is_folder')) == "1" or str(item_type) in ["2", "0"] or str(item.get('material_type')).upper() == "FOLDER"
                 
                 if is_folder:
-                    res = await fetch_folder_contents(api_base, raw_text2, item["id"], hdr1, item.get("Title", ""), userid)
+                    res = await fetch_folder_contents(api_base, raw_text2, item.get("id"), hdr1, item.get("Title", ""), userid)
                 else:
                     res = await fetch_item_details(api_base, raw_text2, item, hdr1, "", userid)
                 
