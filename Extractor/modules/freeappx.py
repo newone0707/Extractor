@@ -95,7 +95,7 @@ async def fetch_appx_html_to_json(session, url, headers=None, data=None):
 async def fetch_appx_video_id_details_v2(session, api, selected_batch_id, video_id, ytFlag, headers, folder_wise_course, user_id):
     logging.info(f"User ID: {user_id} - Fetching video details for video ID: {video_id}")
     try:
-        res = await fetch_appx_html_to_json(session, f"{api}/get/fetchVideoDetailsById?course_id={selected_batch_id}&folder_wise_course={folder_wise_course}&ytflag={ytFlag}&video_id={video_id}", headers)
+        res = await fetch_appx_html_to_json(session, f"{api}/get/fetchVideoDetailsById?course_id={selected_batch_id}&folder_wise_course={folder_wise_course}&ytflag=1&video_id={video_id}", headers)
 
         output = []
         if res:
@@ -224,7 +224,7 @@ async def fetch_appx_folder_contents_v2(session, api, selected_batch_id, folder_
 async def fetch_appx_video_id_details_v3(session, api, selected_batch_id, video_id, ytFlag, headers, user_id):
     logging.info(f"User ID: {user_id} - Fetching video details V3 for video ID: {video_id}")
     try:
-        res = await fetch_appx_html_to_json(session, f"{api}/get/fetchVideoDetailsById?course_id={selected_batch_id}&folder_wise_course=0&ytflag={ytFlag}&video_id={video_id}", headers)
+        res = await fetch_appx_html_to_json(session, f"{api}/get/fetchVideoDetailsById?course_id={selected_batch_id}&folder_wise_course=1&ytflag=1&video_id={video_id}", headers)
         with open("logs.txt", "a") as log_file:
             log_file.write(f"{res}\n")
 
