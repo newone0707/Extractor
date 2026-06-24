@@ -189,16 +189,12 @@ async def fetch_folder_contents(api_base, course_id, folder_id, headers, current
                 item_type = item.get('resource_type', item.get('type'))
                 is_folder = str(item.get('is_folder')) == "1" or str(item_type) in ["2", "0"] or str(item.get('material_type')).upper() == "FOLDER"
                 
+                new_path = f"{current_path} -> {item_name}" if current_path else item_name
                 if is_folder:
-                    new_path = f"{current_path} -> {item_name}" if current_path else item_name
-                    tasks.append(fetch_folder_contents(api_base, course_id, item["id"], headers, new_path, userid))
+                    res = await fetch_folder_contents(api_base, course_id, item["id"], headers, new_path, userid)
                 else:
-                    new_path = f"{current_path} -> {item_name}" if current_path else item_name
-                    tasks.append(fetch_item_details(api_base, course_id, item, headers, new_path, userid))
-
-        if tasks:
-            results = await asyncio.gather(*tasks)
-            for res in results:
+                    res = await fetch_item_details(api_base, course_id, item, headers, new_path, userid)
+                
                 if res:
                     outputs.extend(res)
 
@@ -240,9 +236,12 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
                 is_folder = str(item.get('is_folder')) == "1" or str(item_type) in ["2", "0"] or str(item.get('material_type')).upper() == "FOLDER"
                 
                 if is_folder:
-                    tasks.append(fetch_folder_contents(api_base, raw_text2, item["id"], hdr1, item.get("Title", ""), userid))
+                    res = await fetch_folder_contents(api_base, raw_text2, item["id"], hdr1, item.get("Title", ""), userid)
                 else:
-                    tasks.append(fetch_item_details(api_base, raw_text2, item, hdr1, "", userid))
+                    res = await fetch_item_details(api_base, raw_text2, item, hdr1, "", userid)
+                
+                if res:
+                    all_outputs.extend(res)
                 
                 processed += 1
                 if processed % 5 == 0:
@@ -251,12 +250,6 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
                         f"├─ Progress: {processed}/{total_items}\n"
                         f"└─ Current: <code>{item.get('Title', 'Unknown')}</code>"
                     )
-
-        if tasks:
-            results = await asyncio.gather(*tasks)
-            for res in results:
-                if res:
-                    all_outputs.extend(res)
 
         if not all_outputs:
             await progress_msg.edit_text("❌ <b>No content found in this batch</b>")
