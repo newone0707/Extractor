@@ -93,11 +93,20 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
             url += f"&userid={userid}"
 
         r4 = await safe_fetch_json(url, headers)
+        
+        fallback_outputs = []
+        item_link = item.get('file_link') or item.get('pdf_link')
+        if item_link:
+            if not item_link.startswith('http') and ':' in item_link:
+                dec = decrypt(item_link)
+                if dec: item_link = dec
+            fallback_outputs.append(f"{prefix}{vt} : {item_link}")
+
         if not r4 or not r4.get("data"):
-            return []
+            return fallback_outputs
 
         data = r4.get("data")
-        vt = data.get("Title", "")
+        vt_api = data.get("Title", "")
         vl = data.get("download_link", "")
         fl = data.get("video_id", "")
         
@@ -165,6 +174,15 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
             if x not in seen:
                 seen.add(x)
                 unique_outputs.append(x)
+                
+        if not unique_outputs:
+            item_link = item.get('file_link') or item.get('pdf_link')
+            if item_link:
+                if not item_link.startswith('http') and ':' in item_link:
+                    dec = decrypt(item_link)
+                    if dec: item_link = dec
+                unique_outputs.append(f"{prefix}{vt} : {item_link}")
+                
         return unique_outputs
 
     except Exception as e:
@@ -213,6 +231,8 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
         
         url = f"{api_base}/get/folder_contentsv2?course_id={raw_text2}&parent_id=-1&folder_wise_course=1"
         if userid:
+            hdr1["User-ID"] = str(userid)
+            hdr1["Authorization"] = str(token)
             url += f"&userid={userid}"
             
         j2 = await safe_fetch_json(url, hdr1)
