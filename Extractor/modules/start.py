@@ -126,7 +126,7 @@ button1 = [
                 ],
                 [
                     InlineKeyboardButton("👑 Vɪsɪᴏɴ Iᴀs", callback_data="vision_ias_"),
-                    InlineKeyboardButton("👑 Rᴀɴᴋᴇʀs Gᴜʀᴜᴋᴜʟ", callback_data="maintainer_")
+                    InlineKeyboardButton("👑 Aᴘᴘx", callback_data="appx_")
                 ],
                 [
                     InlineKeyboardButton("𝐁 𝐀 𝐂 𝐊", callback_data="modes_")
@@ -700,6 +700,10 @@ async def handle_callback(client, query):
         api = "exampurapi.classx.co.in"
         name = "App Exampur"
         await appex_v2_txt(app, query.message, api, name)
+
+    elif query.data=="appx_":          
+        from Extractor.modules.appex_v4 import appex_v4_txt
+        await appex_v4_txt(app, query.message)
 
     elif query.data=="classplus_":          
         await classplus_txt(app, query.message)
