@@ -337,7 +337,7 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
             f"📊 𝗙𝗶𝗻𝗮𝗹 𝗦𝘁𝗮𝘁𝘂𝘀:\n"
             f"📚 Processed: {total_items} items\n"
             f"📤 File has been uploaded\n\n"
-            f"Thank you for using @IFSAshuAbhiBot Extractor Pro! 🌟"
+            f"Thank you for using @adxcontactbot Extractor Pro! 🌟"
         )
 
     except Exception as e:
