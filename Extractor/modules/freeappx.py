@@ -1,3 +1,4 @@
+from Extractor.modules.custom_crypto import encrypt_direct_url
 import requests, os, sys, re
 import json, asyncio
 import subprocess
@@ -112,7 +113,7 @@ async def fetch_appx_video_id_details_v2(session, api, selected_batch_id, video_
                         path = appx_decrypt(drm_data[0].get("path", "")) if drm_data and isinstance(drm_data, list) and drm_data and drm_data[0].get("path") else None
                             
                         if path:
-                            output.append(f"{Title}:{path}\n")
+                            output.append(f"{Title}:{encrypt_direct_url(path)}\n")
                                 
                 pdf_link = appx_decrypt(data.get("pdf_link", "")) if data.get("pdf_link", "") and appx_decrypt(data.get("pdf_link", "")).endswith(".pdf") else None
 
@@ -121,11 +122,11 @@ async def fetch_appx_video_id_details_v2(session, api, selected_batch_id, video_
                     if is_pdf_encrypted == 1 or is_pdf_encrypted == "1":
                         key = appx_decrypt(data.get("pdf_encryption_key", "")) if data.get("pdf_encryption_key") else None
                         if key:
-                            output.append(f"{Title}:{pdf_link}*{key}\n")
+                            output.append(f"{Title}:{encrypt_direct_url(pdf_link, key)}\n")
                         else:
-                            output.append(f"{Title}:{pdf_link}\n")
+                            output.append(f"{Title}:{encrypt_direct_url(pdf_link)}\n")
                     else:
-                        output.append(f"{Title}:{pdf_link}\n")
+                        output.append(f"{Title}:{encrypt_direct_url(pdf_link)}\n")
                         
                 pdf_link2 = appx_decrypt(data.get("pdf_link2", "")) if data.get("pdf_link2", "") and appx_decrypt(data.get("pdf_link2", "")).endswith(".pdf") else None
                     
@@ -134,11 +135,11 @@ async def fetch_appx_video_id_details_v2(session, api, selected_batch_id, video_
                     if is_pdf2_encrypted == 1 or is_pdf2_encrypted == "1":
                         key = appx_decrypt(data.get("pdf2_encryption_key", "")) if data.get("pdf2_encryption_key") else None
                         if key:
-                            output.append(f"{Title}:{pdf_link2}*{key}\n")
+                            output.append(f"{Title}:{encrypt_direct_url(pdf_link2, key)}\n")
                         else:
-                            output.append(f"{Title}:{pdf_link2}\n")
+                            output.append(f"{Title}:{encrypt_direct_url(pdf_link2)}\n")
                     else:
-                        output.append(f"{Title}:{pdf_link2}\n")
+                        output.append(f"{Title}:{encrypt_direct_url(pdf_link2)}\n")
 
             else:
                 output.append(f"Did Not Found Course_id : {selected_batch_id} Video_id : {video_id}\n")
@@ -169,10 +170,8 @@ async def fetch_appx_folder_contents_v2(session, api, selected_batch_id, folder_
 
                 if material_type == "VIDEO":
                     if video_id:
-                        from Extractor.modules.custom_crypto import encrypt_appx_params
-                        token = headers.get("Authorization", "")
-                        enc = encrypt_appx_params(api, selected_batch_id, video_id, token, user_id)
-                        output.append(f"{Title}:{enc}\n")
+                        tasks.append(
+                            fetch_appx_video_id_details_v2(session, api, selected_batch_id, video_id, ytFlag, headers, folder_wise_course, user_id))
                 
                 elif material_type == "PDF" or material_type == "TEST":
                     pdf_link = appx_decrypt(item.get("pdf_link", "")) if item.get("pdf_link", "") and appx_decrypt(item.get("pdf_link", "")).endswith(".pdf") else None
@@ -182,11 +181,11 @@ async def fetch_appx_folder_contents_v2(session, api, selected_batch_id, folder_
                         if is_pdf_encrypted == 1 or is_pdf_encrypted == "1":
                             key = appx_decrypt(item.get("pdf_encryption_key", "")) if item.get("pdf_encryption_key") else None
                             if key:
-                                output.append(f"{Title} PDF:{pdf_link}*{key}\n")
+                                output.append(f"{Title} PDF:{encrypt_direct_url(pdf_link, key)}\n")
                             else:
-                                output.append(f"{Title} PDF:{pdf_link}\n")
+                                output.append(f"{Title} PDF:{encrypt_direct_url(pdf_link)}\n")
                         else:
-                            output.append(f"{Title} PDF:{pdf_link}\n")
+                            output.append(f"{Title} PDF:{encrypt_direct_url(pdf_link)}\n")
                             
                     pdf_link2 = appx_decrypt(item.get("pdf_link2", "")) if item.get("pdf_link2", "") and appx_decrypt(item.get("pdf_link2", "")).endswith(".pdf") else None
                         
@@ -245,7 +244,7 @@ async def fetch_appx_video_id_details_v3(session, api, selected_batch_id, video_
                         path = appx_decrypt(drm_data[0].get("path", "")) if drm_data and isinstance(drm_data, list) and drm_data and drm_data[0].get("path") else None
                             
                         if path:
-                            output.append(f"{Title}:{path}\n")
+                            output.append(f"{Title}:{encrypt_direct_url(path)}\n")
                                 
                 pdf_link = appx_decrypt(data.get("pdf_link", "")) if data.get("pdf_link", "") and appx_decrypt(data.get("pdf_link", "")).endswith(".pdf") else None
 
@@ -254,11 +253,11 @@ async def fetch_appx_video_id_details_v3(session, api, selected_batch_id, video_
                     if is_pdf_encrypted == 1 or is_pdf_encrypted == "1":
                         key = appx_decrypt(data.get("pdf_encryption_key", "")) if data.get("pdf_encryption_key") else None
                         if key:
-                            output.append(f"{Title}:{pdf_link}*{key}\n")
+                            output.append(f"{Title}:{encrypt_direct_url(pdf_link, key)}\n")
                         else:
-                            output.append(f"{Title}:{pdf_link}\n")
+                            output.append(f"{Title}:{encrypt_direct_url(pdf_link)}\n")
                     else:
-                        output.append(f"{Title}:{pdf_link}\n")
+                        output.append(f"{Title}:{encrypt_direct_url(pdf_link)}\n")
                         
                 pdf_link2 = appx_decrypt(data.get("pdf_link2", "")) if data.get("pdf_link2", "") and appx_decrypt(data.get("pdf_link2", "")).endswith(".pdf") else None
 
@@ -267,11 +266,11 @@ async def fetch_appx_video_id_details_v3(session, api, selected_batch_id, video_
                     if is_pdf2_encrypted == 1 or is_pdf2_encrypted == "1":
                         key = appx_decrypt(data.get("pdf2_encryption_key", "")) if data.get("pdf2_encryption_key") else None
                         if key:
-                            output.append(f"{Title}:{pdf_link2}*{key}\n")
+                            output.append(f"{Title}:{encrypt_direct_url(pdf_link2, key)}\n")
                         else:
-                            output.append(f"{Title}:{pdf_link2}\n")
+                            output.append(f"{Title}:{encrypt_direct_url(pdf_link2)}\n")
                     else:
-                        output.append(f"{Title}:{pdf_link2}\n")
+                        output.append(f"{Title}:{encrypt_direct_url(pdf_link2)}\n")
             else:
                 output.append(f"Did Not Found Course_id : {selected_batch_id} Video_id : {video_id}\n")
         else:
@@ -362,23 +361,21 @@ async def process_folder_wise_course_0(session, api, selected_batch_id, headers,
                                     if is_pdf2_encrypted == 1 or is_pdf2_encrypted == "1":
                                         key = appx_decrypt(item.get("pdf2_encryption_key"))
                                         if key:
-                                            all_outputs.append(f"{Title}:{pdf_link2}*{key}\n")
+                                            all_outputs.append(f"{Title}:{encrypt_direct_url(pdf_link2, key)}\n")
                                         else:
-                                            all_outputs.append(f"{Title}:{pdf_link2}\n")
+                                            all_outputs.append(f"{Title}:{encrypt_direct_url(pdf_link2)}\n")
                                     else:
-                                        all_outputs.append(f"{Title}:{pdf_link2}\n")
+                                        all_outputs.append(f"{Title}:{encrypt_direct_url(pdf_link2)}\n")
 
                             elif item.get("material_type") == "IMAGE":
                                 thumbnail = item.get("thumbnail")
                                 if thumbnail:
-                                    all_outputs.append(f"{Title}:{thumbnail}\n")
+                                    all_outputs.append(f"{Title}:{encrypt_direct_url(thumbnail)}\n")
                                     
                             elif item.get("material_type") == "VIDEO":
                                 if selected_batch_id is not None and video_id is not None and ytFlag is not None:
-                                    from Extractor.modules.custom_crypto import encrypt_appx_params
-                                    token = headers.get("Authorization", "")
-                                    enc = encrypt_appx_params(api, selected_batch_id, video_id, token, user_id)
-                                    all_outputs.append(f"{Title}:{enc}\n")
+                                    tasks.append(
+                                        fetch_appx_video_id_details_v3(session, api, selected_batch_id, video_id, ytFlag, headers, user_id))
                                 else:
                                     logging.warning(
                                         f"User ID: {user_id} - Skipping video due to None value: course_id={selected_batch_id}, video_id={video_id}, ytflag={ytFlag}")
@@ -415,19 +412,15 @@ async def process_folder_wise_course_1(session, api, selected_batch_id, headers,
                     
                 is_pdf_encrypted = item.get("is_pdf_encrypted")
 
-                from Extractor.modules.custom_crypto import encrypt_direct_url
                 if pdf_link:
                     if is_pdf_encrypted == 1 or is_pdf_encrypted == "1":
                         key = appx_decrypt(item.get("pdf_encryption_key"))
                         if key:
-                            enc = encrypt_direct_url(pdf_link, key)
-                            all_outputs.append(f"{Title}:{enc}\n")
+                            all_outputs.append(f"{Title}:{pdf_link}*{key}\n")
                         else:
-                            enc = encrypt_direct_url(pdf_link)
-                            all_outputs.append(f"{Title}:{enc}\n")
+                            all_outputs.append(f"{Title}:{pdf_link}\n")
                     else:
-                        enc = encrypt_direct_url(pdf_link)
-                        all_outputs.append(f"{Title}:{enc}\n")
+                        all_outputs.append(f"{Title}:{pdf_link}\n")
                         
                 pdf_link2 = appx_decrypt(item.get("pdf_link2", "")) if item.get("pdf_link2", "") and appx_decrypt(item.get("pdf_link2", "")).endswith(".pdf") else None
                     
@@ -437,25 +430,20 @@ async def process_folder_wise_course_1(session, api, selected_batch_id, headers,
                     if is_pdf2_encrypted == 1 or is_pdf2_encrypted == "1":
                         key = appx_decrypt(item.get("pdf2_encryption_key"))
                         if key:
-                            enc = encrypt_direct_url(pdf_link2, key)
-                            all_outputs.append(f"{Title}:{enc}\n")
+                            all_outputs.append(f"{Title}:{encrypt_direct_url(pdf_link2, key)}\n")
                         else:
-                            enc = encrypt_direct_url(pdf_link2)
-                            all_outputs.append(f"{Title}:{enc}\n")
+                            all_outputs.append(f"{Title}:{encrypt_direct_url(pdf_link2)}\n")
                     else:
-                        enc = encrypt_direct_url(pdf_link2)
-                        all_outputs.append(f"{Title}:{enc}\n")
+                        all_outputs.append(f"{Title}:{encrypt_direct_url(pdf_link2)}\n")
 
             elif item.get("material_type") == "IMAGE":
                 thumbnail = item.get("thumbnail")
                 if thumbnail:
-                   all_outputs.append(f"{Title}:{thumbnail}\n")
+                   all_outputs.append(f"{Title}:{encrypt_direct_url(thumbnail)}\n")
                    
             elif item.get("material_type") == "VIDEO":
-                from Extractor.modules.custom_crypto import encrypt_appx_params
-                token = headers.get("Authorization", "")
-                enc = encrypt_appx_params(api, selected_batch_id, video_id, token, user_id)
-                all_outputs.append(f"{Title}:{enc}\n")
+                tasks.append(
+                    fetch_appx_video_id_details_v2(session, api, selected_batch_id, video_id, ytFlag, headers, 1, user_id))
 
             elif item.get("material_type") == "FOLDER":
                 tasks.append(fetch_appx_folder_contents_v2(session, api, selected_batch_id, item.get("id"), headers, 1, user_id))
