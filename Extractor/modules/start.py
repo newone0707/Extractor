@@ -1090,7 +1090,7 @@ async def html_to_text_command(client: Client, message: Message):
         await message.reply_document(
             txt_path,
             thumb=thumb_path if thumb_path else None,
-            caption="<blockquote>✅ HTML converted to text format\n🔓 All URLs have been decoded\n\n🤖 @IFSAshuAbhiBot </blockquote>"
+            caption="<blockquote>✅ HTML converted to text format\n🔓 All URLs have been decoded\n\n🤖 @adxcontactbot </blockquote>"
         )
         
         # Cleanup
