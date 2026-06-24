@@ -295,6 +295,9 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
         pdf_count = sum(1 for url in all_outputs if any(ext in url.lower() for ext in ['.pdf', 'paid_course']))
         encrypted_count = sum(1 for url in all_outputs if 'encrypted' in url.lower() or '*' in url)
 
+        if all_outputs:
+            all_outputs.insert(0, f"BaseURL: {api_base}")
+
         file_name = f"{app_name}_{sanitized_course_name}_{int(datetime.now().timestamp())}.txt"
         with open(file_name, 'w', encoding='utf-8') as f:
             f.write('\n'.join(all_outputs))
