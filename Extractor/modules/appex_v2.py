@@ -46,7 +46,7 @@ async def fetch_item_details(session, api_base, course_id, item, headers):
     outputs = []  
 
     try:
-        async with session.get(f"{api_base}/get/fetchVideoDetailsById?course_id={course_id}&folder_wise_course=1&ytflag=0&video_id={fi}", headers=headers) as response:
+        async with session.get(f"{api_base}/get/fetchVideoDetailsById?course_id={course_id}&folder_wise_course=1&ytflag=1&video_id={fi}", headers=headers) as response:
             if response.headers.get('Content-Type', '').startswith('application/json'):
                 r4 = await response.json()
                 data = r4.get("data")
