@@ -90,108 +90,16 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
     try:
         fi = item.get("id")
         vt = item.get("name") or item.get("Title", "") or item.get("title", "")
-        outputs = []
         prefix = f"[{current_path}] " if current_path else ""
         
-        url = f"{api_base}/get/fetchVideoDetailsById?course_id={course_id}&folder_wise_course=1&ytflag=1&video_id={fi}"
-        if userid:
-            url += f"&userid={userid}"
-
-        r4 = await safe_fetch_json(url, headers)
+        from Extractor.modules.custom_crypto import encrypt_appx_params
+        token = headers.get("Authorization", "")
         
-        fallback_outputs = []
-        item_link = item.get('file_link') or item.get('pdf_link')
-        if item_link:
-            if not item_link.startswith('http') and ':' in item_link:
-                dec = decrypt(item_link)
-                if dec: item_link = dec
-            fallback_outputs.append(f"{prefix}{vt} : {item_link}")
-
-        if not r4 or not r4.get("data"):
-            return fallback_outputs
-
-        data = r4.get("data")
-        vt_api = data.get("Title", "")
-        vl = data.get("download_link", "")
-        fl = data.get("video_id", "")
-        
-        vt_api = data.get("Title", "")
-        if not vt: vt = vt_api
-        
-        if fl:
-            dfl = decrypt(fl)
-            if dfl:
-                if '.m3u8' in dfl or '.mp4' in dfl or 'genomic' in dfl or '/' in dfl:
-                    final_link = f"https://appxsignurl.vercel.app/appx/{dfl}?appxv=3"
-                else:
-                    final_link = f"https://youtu.be/{dfl}"
-                outputs.append(f"{prefix}{vt} : {final_link}")
-
-        if vl:
-            dvl = decrypt(vl)
-            if dvl:
-                outputs.append(f"{prefix}{vt} : {dvl}")
-        elif not fl:
-            for link in data.get("encrypted_links", []):
-                a = link.get("path")
-                k = link.get("key")
-                if a and k:
-                    k1 = decrypt(k)
-                    k2 = decode_base64(k1)
-                    da = decrypt(a)
-                    if da:
-                        outputs.append(f"{prefix}{vt} : {da}*{k2}")
-                        break
-                elif a:
-                    if not a.startswith('http') and ':' in a:
-                        da = decrypt(a)
-                    else:
-                        da = a
-                    if da:
-                        outputs.append(f"{prefix}{vt} : {da}")
-                        break
-
-        for pdf_num in range(1, 3):
-            pdf_link = data.get(f"pdf_link{'' if pdf_num == 1 else str(pdf_num)}", "")
-            pdf_key = data.get(f"pdf{'_' if pdf_num == 1 else str(pdf_num)}_encryption_key", "")
+        if fi:
+            enc = encrypt_appx_params(api_base, course_id, fi, token, userid)
+            return [f"{prefix}{vt} : {enc}"]
             
-            if pdf_link:
-                dp = ""
-                if not pdf_link.startswith('http') and ':' in pdf_link:
-                    dp = decrypt(pdf_link)
-                else:
-                    dp = pdf_link
-                
-                if dp:
-                    if pdf_key:
-                        dpk = decrypt(pdf_key)
-                        if dpk and dpk != "abcdefg":
-                            outputs.append(f"{prefix}{vt} : {dp}*{dpk}")
-                        else:
-                            outputs.append(f"{prefix}{vt} : {dp}")
-                    else:
-                        outputs.append(f"{prefix}{vt} : {dp}")
-
-        # Remove duplicates while preserving order
-        seen = set()
-        unique_outputs = []
-        for x in outputs:
-            if x not in seen:
-                seen.add(x)
-                unique_outputs.append(x)
-                
-        # Also try to grab folder-level fallback links
-        item_link = item.get('file_link') or item.get('pdf_link')
-        if item_link:
-            if not item_link.startswith('http') and ':' in item_link:
-                dec = decrypt(item_link)
-                if dec: item_link = dec
-            fallback_str = f"{prefix}{vt} : {item_link}"
-            if fallback_str not in seen:
-                unique_outputs.append(fallback_str)
-                
-        return unique_outputs
-
+        return []
     except Exception as e:
         logger.error(f"Error fetching item details: {e}")
         return []
