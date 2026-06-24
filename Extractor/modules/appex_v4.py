@@ -98,7 +98,7 @@ async def process_video(session, api_base, bi, si, sn, ti, tn, video, hdr1):
 
         if vl:
             dvl = decrypt(vl)
-            if ".pdf" not in dvl: 
+            if dvl: 
                 lines.append(f"{vt}:{dvl}\n")
                  
         else:
@@ -415,93 +415,11 @@ async def appex_v5_txt(app, message, api, name, predefined_credentials=None):
         price = course_info.get("price", "N/A")
         
         try:
-            r = scraper.get(f"{api_base}/get/course_by_id?id={raw_text2}", headers=hdr1)
-            try:
-                r_json = r.json()
-            except:
-                # If JSON parsing fails, try v2_new method
-                sanitized_course_name = course_name.replace(':', '_').replace('/', '_')
-                await v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start_date, end_date, price, input2, m1, m2)
-                continue
-
-            if not r_json.get("data"):
-                sanitized_course_name = course_name.replace(':', '_').replace('/', '_')
-                await v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start_date, end_date, price, input2, m1, m2)
-                continue
-
-            for i in r_json.get("data", []):
-                txtn = i.get("course_name")
-                filename = f"{raw_text2}_{txtn.replace(':', '_').replace('/', '_')}.txt"
-
-                if '/' in filename:
-                    filename1 = filename.replace("/", "").replace(" ", "_")
-                else:
-                    filename1 = filename
-                
-                async with aiohttp.ClientSession() as session:
-                    with open(filename1, 'w') as f:
-                        try:
-                            r1 = await fetch(session, f"{api_base}/get/allsubjectfrmlivecourseclass?courseid={raw_text2}&start=-1", hdr1)
-                
-                            for subject in r1.get("data", []):
-                                si = subject.get("subjectid")
-                                sn = subject.get("subject_name")
-
-                                r2 = await fetch(session, f"{api_base}/get/alltopicfrmlivecourseclass?courseid={raw_text2}&subjectid={si}&start=-1", hdr1)
-                                topics = sorted(r2.get("data", []), key=lambda x: x.get("topicid"))
-
-                                tasks = [handle_course(session, api_base, raw_text2, si, sn, t, hdr1) for t in topics]
-                                all_data = await asyncio.gather(*tasks)
-                    
-                                for data in all_data:
-                                    if data:
-                                        f.writelines(data)
-            
-                        except Exception as e:
-                            print(f"An error occurred while processing batch {raw_text2}: {str(e)}")
-                            await message.reply_text(f"⚠️ Error processing batch {raw_text2}. Trying alternative method...")
-                            sanitized_course_name = course_name.replace(':', '_').replace('/', '_')
-                            await v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start_date, end_date, price, input2, m1, m2)
-                            continue
-                        
-                    end_time = time.time()
-                    elapsed_time = end_time - start_time
-                    print(f"Elapsed time: {elapsed_time:.1f} seconds")
-                    
-                    # Using v3's caption format
-                    caption = (
-                        "࿇ ══━━ 🏦 ━━══ ࿇\n\n"
-                        f"🌀 **Aᴘᴘ Nᴀᴍᴇ** : {app_name}\n"
-                        f"============================\n\n"
-                        f"🎯 **Bᴀᴛᴄʜ Nᴀᴍᴇ** : `{raw_text2}_{txtn}`\n"
-                        f"🌟 **Cᴏᴜʀsᴇ Tʜᴜᴍʙɴᴀɪʟ** : <a href={thumbnail}>Thumbnail</a>\n\n"
-                        f"📅 **Sᴛᴀʀᴛ Dᴀᴛᴇ** : {start_date}\n"
-                        f"📅 **Eɴᴅ Dᴀᴛᴇ** : {end_date}\n"
-                        f"💰 **Pʀɪᴄᴇ** : ₹{price}\n\n"
-                        f"🌐 **Jᴏɪɴ Us** : {join}\n"
-                        f"⏱ **Tɪᴍᴇ Tᴀᴋᴇɴ** : {elapsed_time:.1f}s\n"
-                        f"📅 **Dᴀᴛᴇ** : {time_new}\n"
-                        "━━━━━━━━━━━━━━━━━━━━━\n"
-                        "🔰 ᴍᴀɪɴᴛᴀɪɴᴇᴅ ʙʏ @PRO_TXT_EXTRATOR_BOT"
-                    )
-                
-                    try:
-                        await app.send_document(message.chat.id, filename1, caption=caption)
-                        await app.send_document(PREMIUM_LOGS, filename1, caption=caption)
-                        
-                    except Exception as e:
-                        print(f"An error occurred while sending the document: {str(e)}")
-                        await message.reply_text(f"⚠️ Error sending document for batch {raw_text2}")
-                    
-                    finally:
-                        if os.path.exists(filename1):
-                            os.remove(filename1)
-                            
+            sanitized_course_name = course_name.replace(':', '_').replace('/', '_')
+            await v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start_date, end_date, price, input2, m1, m2)
         except Exception as e:
             print(f"Error processing batch {raw_text2}: {str(e)}")
             await message.reply_text(f"⚠️ Failed to process batch {raw_text2}")
-            sanitized_course_name = course_name.replace(':', '_').replace('/', '_')
-            await v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start_date, end_date, price, input2, m1, m2)
         finally:
             try:
                 await m2.delete()
