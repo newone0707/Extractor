@@ -221,7 +221,7 @@ async def process_course_data(raw_text05, raw_text1, hdr, editable, userid, bot,
                     video_id = video["id"]
                     video_title = video["Title"].replace('||', '').replace('#', '').replace(':', '').replace(',', '').replace('@', '').replace('|', '')
                     scraper = cloudscraper.create_scraper()            
-                    html6 = scraper.get("https://"+raw_text05+"/get/fetchVideoDetailsById?course_id=" + raw_text1 + "&video_id=" + video_id + "&ytflag=0&folder_wise_course=0", headers=hdr).content
+                    html6 = scraper.get("https://"+raw_text05+"/get/fetchVideoDetailsById?course_id=" + raw_text1 + "&video_id=" + video_id + "&ytflag=1&folder_wise_course=1", headers=hdr).content
                     #print(html6)
                     time.sleep(1)
                     r4 = json.loads(html6)
