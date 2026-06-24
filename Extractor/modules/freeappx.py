@@ -637,6 +637,8 @@ async def process_appxwp(bot: Client, m: Message, user_id: int):
                     all_outputs.extend(outputs_1)
                 
                 if all_outputs:
+                    all_outputs.insert(0, f"BaseURL: {api}\n")
+                    
                     # Save original content for logs
                     with open(f"{clean_file_name}_original.txt", 'w', encoding='utf-8') as f:
                         for output_line in all_outputs:
