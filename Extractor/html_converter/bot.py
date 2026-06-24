@@ -156,11 +156,24 @@ def generate_html(file_name, videos, pdfs, others):
         <style>
             :root {{
                 --font-family: 'Inter', sans-serif;
-                --heading-color: #2d3748;
-                --text-color: #4a5568;
-                --accent-color: #4299e1;
-                --border-color: #e2e8f0;
-                --bg-color: #f7fafc;
+                --heading-color: #ffffff;
+                --text-color: #cbd5e1;
+                --accent-color: #3b82f6;
+                --border-color: rgba(255, 255, 255, 0.1);
+                --bg-color: #0f172a;
+                --card-bg: rgba(30, 41, 59, 0.7);
+                --hover-bg: rgba(51, 65, 85, 0.9);
+                --gradient-start: #3b82f6;
+                --gradient-end: #8b5cf6;
+            }}
+
+            [data-theme="light"] {{
+                --heading-color: #0f172a;
+                --text-color: #475569;
+                --bg-color: #f8fafc;
+                --card-bg: rgba(255, 255, 255, 0.8);
+                --border-color: rgba(0, 0, 0, 0.1);
+                --hover-bg: rgba(241, 245, 249, 0.9);
             }}
 
             body {{
@@ -168,90 +181,194 @@ def generate_html(file_name, videos, pdfs, others):
                 line-height: 1.6;
                 color: var(--text-color);
                 background-color: var(--bg-color);
+                background-image: 
+                    radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                    radial-gradient(at 100% 0%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+                background-attachment: fixed;
+                min-height: 100vh;
+                transition: all 0.3s ease;
             }}
 
             .brand-title {{
-                font-weight: 700;
+                font-weight: 800;
                 letter-spacing: -0.025em;
-                color: var(--heading-color);
-                font-variant: small-caps;
+                background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
                 margin-bottom: 1.5rem;
+                text-transform: uppercase;
             }}
 
             .header-title {{
-                font-size: 1.875rem;
-                font-weight: 600;
+                font-size: 2rem;
+                font-weight: 700;
                 color: var(--heading-color);
                 margin-bottom: 1rem;
-                font-variant: small-caps;
+                letter-spacing: -0.02em;
             }}
 
             .stats-container {{
                 display: flex;
                 justify-content: center;
                 gap: 1.5rem;
-                margin-bottom: 2rem;
+                margin-bottom: 3rem;
                 flex-wrap: wrap;
             }}
 
             .stat-item {{
-                background: rgba(255, 255, 255, 0.8);
-                backdrop-filter: blur(10px);
-                padding: 1rem 1.5rem;
-                border-radius: 12px;
+                background: var(--card-bg);
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                padding: 1.5rem;
+                border-radius: 16px;
                 border: 1px solid var(--border-color);
                 text-align: center;
-                min-width: 150px;
+                min-width: 160px;
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+            }}
+
+            .stat-item:hover {{
+                transform: translateY(-5px);
+                box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                border-color: rgba(59, 130, 246, 0.3);
             }}
 
             .stat-number {{
-                font-size: 2rem;
-                font-weight: 700;
-                color: var(--accent-color);
-                margin-bottom: 0.25rem;
-                font-variant: small-caps;
+                font-size: 2.5rem;
+                font-weight: 800;
+                background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 0.5rem;
+                line-height: 1;
             }}
 
             .stat-label {{
                 font-size: 0.875rem;
                 color: var(--text-color);
                 text-transform: uppercase;
-                letter-spacing: 0.05em;
+                letter-spacing: 0.1em;
+                font-weight: 600;
             }}
 
             .content-section {{
-                margin-top: 2rem;
+                margin-top: 3rem;
             }}
 
             .section-title {{
-                font-size: 1.25rem;
-                font-weight: 600;
+                font-size: 1.5rem;
+                font-weight: 700;
                 color: var(--heading-color);
-                margin-bottom: 1rem;
-                font-variant: small-caps;
+                margin-bottom: 1.5rem;
                 display: flex;
                 align-items: center;
-                gap: 0.5rem;
+                gap: 0.75rem;
+                padding-bottom: 0.75rem;
+                border-bottom: 2px solid var(--border-color);
+            }}
+
+            .section-title i {{
+                color: var(--accent-color);
             }}
 
             .link-list {{
                 list-style: none;
                 padding: 0;
                 margin: 0;
+                display: grid;
+                gap: 1rem;
             }}
 
             .link-item {{
-                background: white;
+                background: var(--card-bg);
+                backdrop-filter: blur(12px);
                 border: 1px solid var(--border-color);
-                border-radius: 8px;
-                padding: 1rem;
-                margin-bottom: 0.75rem;
-                transition: all 0.2s ease;
+                border-radius: 12px;
+                padding: 1.25rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }}
 
             .link-item:hover {{
+                background: var(--hover-bg);
+                transform: translateX(5px);
+                border-color: rgba(59, 130, 246, 0.4);
+                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            }}
+
+            .link-content {{
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                flex: 1;
+                min-width: 0;
+            }}
+
+            .link-icon {{
+                width: 40px;
+                height: 40px;
+                border-radius: 10px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.25rem;
+                flex-shrink: 0;
+                background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(139, 92, 246, 0.1));
+                color: var(--accent-color);
+                border: 1px solid rgba(59, 130, 246, 0.2);
+            }}
+
+            .link-details {{
+                min-width: 0;
+            }}
+
+            .link-title {{
+                font-weight: 600;
+                color: var(--heading-color);
+                margin: 0 0 0.25rem 0;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                font-size: 1.05rem;
+            }}
+
+            .link-type {{
+                font-size: 0.75rem;
+                color: var(--text-color);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                background: rgba(255, 255, 255, 0.05);
+                padding: 0.25rem 0.5rem;
+                border-radius: 4px;
+            }}
+
+            .btn-action {{
+                padding: 0.5rem 1.25rem;
+                border-radius: 8px;
+                font-weight: 600;
+                font-size: 0.875rem;
+                text-decoration: none;
+                display: inline-flex;
+                align-items: center;
+                gap: 0.5rem;
+                transition: all 0.2s ease;
+                border: none;
+                cursor: pointer;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }}
+
+            .btn-play {{
+                background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+                color: white;
+                box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
+            }}
+
+            .btn-play:hover {{
                 transform: translateY(-2px);
-                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             }}
 
             .link-item a {{
@@ -794,16 +911,16 @@ def generate_html(file_name, videos, pdfs, others):
     </div>
     <div class="container-fluid py-5 text-center">
         <h1 class="brand-title mb-4">
-<a href="https://t.me/IFSAshuAbhiBot" style="text-decoration: none; color: inherit;">
+<a href="https://t.me/adxcontactbot" style="text-decoration: none; color: inherit;">
   <i class="fas fa-bolt"></i> ༄ᶦᶰᵈआशु࿐❥◉🇮🇳™<i class="fas fa-bolt"></i>
 </a>
 
                 </h1>
         <h2 class="header-title mb-4">{file_name_without_extension}</h2>
         <p class="lead">
-<a href="https://t.me/IFSAshuAbhiBot" style="text-decoration: none; color: inherit;">
+<a href="https://t.me/adxcontactbot" style="text-decoration: none; color: inherit;">
   <span class="badge bg-primary me-2">
-    <i class="fas fa-robot"></i> Join @IFSAshuAbhiBot
+    <i class="fas fa-robot"></i> Join @adxcontactbot
   </span>
 </a>
 
@@ -875,7 +992,7 @@ def generate_html(file_name, videos, pdfs, others):
         f'<div class="item-actions">'
         f'<button class="btn-action view" onclick="viewPDF(\'{obfuscate_url(url)}\')" title="View PDF">'
         f'<i class="fas fa-eye"></i></button>'
-        f'<button class="btn-action download" onclick="downloadFile(\'{obfuscate_url(url)}\', \'{name} - @IFSAshuAbhiBot.pdf\')" title="Download PDF">'
+        f'<button class="btn-action download" onclick="downloadFile(\'{obfuscate_url(url)}\', \'{name} - @adxcontactbot.pdf\')" title="Download PDF">'
         f'<i class="fas fa-download"></i></button>'
         f'</div>'
         f'</div>'
@@ -1216,9 +1333,9 @@ async def handle_txt2html(client: Client, message: Message):
         # Generate HTML
         html_content = generate_html(file_name, videos, pdfs, others)
         
-        # Save HTML file with @IFSAshuAbhiBot suffix
+        # Save HTML file with @adxcontactbot suffix
         base_name = os.path.splitext(file_name)[0]
-        html_file_name = f"{base_name}_@IFSAshuAbhiBot .html"
+        html_file_name = f"{base_name}_@adxcontactbot .html"
         html_file_path = os.path.join(os.path.dirname(file_path), html_file_name)
         
         with open(html_file_path, "w", encoding='utf-8') as f:
@@ -1234,7 +1351,7 @@ async def handle_txt2html(client: Client, message: Message):
             "• 📄 ᴘᴅꜰ ᴅᴏᴡɴʟᴏᴀᴅ ꜱᴜᴘᴘᴏʀᴛ\n"
             "• ✨ ʙᴇᴀᴜᴛɪꜰᴜʟ ᴀɴɪᴍᴀᴛɪᴏɴꜱ\n"
             "• 🧭 ꜰʟᴏᴀᴛɪɴɢ ᴄᴏɴᴛʀᴏʟꜱ\n"
-            "• 🚀 𝗘𝘅𝘁𝗿𝗮𝗰𝘁𝗲𝗱 𝗕𝘆 ➤ <a href='https://t.me/IFSAshuAbhiBot'><i>༄ᶦᶰᵈआशु࿐❥◉🇮🇳™</i> </a>",
+            "• 🚀 𝗘𝘅𝘁𝗿𝗮𝗰𝘁𝗲𝗱 𝗕𝘆 ➤ <a href='https://t.me/adxcontactbot'><i>༄ᶦᶰᵈआशु࿐❥◉🇮🇳™</i> </a>",
     file_name=html_file_name
 )
 
@@ -1261,6 +1378,6 @@ async def show_txt2html_help(client: Client, message: Message):
         "<blockquote>• ꜱᴍᴀʀᴛ ꜱᴇᴀʀᴄʜ ꜰᴜɴᴄᴛɪᴏɴᴀʟɪᴛʏ 🔎</blockquote>\n"
         "<blockquote>• ʀᴇꜱᴘᴏɴꜱɪᴠᴇ ᴅᴇꜱɪɢɴ 📱</blockquote>\n"
         "<b>📩 ꜱᴇɴᴅ ᴀ .ᴛxᴛ ꜰɪʟᴇ ᴛᴏ ɢᴇᴛ ꜱᴛᴀʀᴛᴇᴅ!</b>\n"
-        " 🚀 𝗘𝘅𝘁𝗿𝗮𝗰𝘁𝗲𝗱 𝗕𝘆 ➤ <a href='https://t.me/IFSAshuAbhiBot'><i>༄ᶦᶰᵈआशु࿐❥◉🇮🇳™</i> </a>"
+        " 🚀 𝗘𝘅𝘁𝗿𝗮𝗰𝘁𝗲𝗱 𝗕𝘆 ➤ <a href='https://t.me/adxcontactbot'><i>༄ᶦᶰᵈआशु࿐❥◉🇮🇳™</i> </a>"
     )
 
