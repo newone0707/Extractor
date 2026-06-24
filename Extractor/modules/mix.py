@@ -155,7 +155,7 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
 async def fetch_folder_contents(api_base, course_id, folder_id, headers, current_path=""):
     try:
         outputs = []
-        j = await safe_fetch_json(f"{api_base}/get/folder_contentsv2?course_id={course_id}&parent_id={folder_id}", headers)
+        j = await safe_fetch_json(f"{api_base}/get/folder_contentsv2?course_id={course_id}&parent_id={folder_id}&folder_wise_course=1", headers)
         if not j:
             return []
 
@@ -188,7 +188,7 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
             f"└─ Initializing batch: <code>{sanitized_course_name}</code>"
         )
 
-        j2 = await safe_fetch_json(f"{api_base}/get/folder_contentsv2?course_id={raw_text2}&parent_id=-1", hdr1)
+        j2 = await safe_fetch_json(f"{api_base}/get/folder_contentsv2?course_id={raw_text2}&parent_id=-1&folder_wise_course=1", hdr1)
 
         if not j2 or not j2.get("data"):
             await progress_msg.edit_text(
