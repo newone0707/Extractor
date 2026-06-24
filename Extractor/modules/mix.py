@@ -60,7 +60,11 @@ def sync_safe_fetch(url, headers):
     try:
         r = scraper.get(url, headers=headers)
         if r.status_code == 200:
-            return r.json()
+            js = r.json()
+            if str(js.get("status")) in ["200", "1"] or js.get("success"):
+                return js
+            elif "data" in js:
+                return js
     except Exception as e:
         pass
     return None
@@ -233,6 +237,9 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
         if userid:
             hdr1["User-ID"] = str(userid)
             hdr1["Authorization"] = str(token)
+            hdr1["token"] = str(token)
+            hdr1["appx-version"] = "2"
+            hdr1["device_type"] = "WEB"
             url += f"&userid={userid}"
             
         j2 = await safe_fetch_json(url, hdr1)
