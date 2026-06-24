@@ -378,8 +378,7 @@ async def process_folder_wise_course_0(session, api, selected_batch_id, headers,
                                     from Extractor.modules.custom_crypto import encrypt_appx_params
                                     token = headers.get("Authorization", "")
                                     enc = encrypt_appx_params(api, selected_batch_id, video_id, token, user_id)
-                                    all_outputs.append(f"{Title}:{enc}
-")
+                                    all_outputs.append(f"{Title}:{enc}\n")
                                 else:
                                     logging.warning(
                                         f"User ID: {user_id} - Skipping video due to None value: course_id={selected_batch_id}, video_id={video_id}, ytflag={ytFlag}")
@@ -416,7 +415,7 @@ async def process_folder_wise_course_1(session, api, selected_batch_id, headers,
                     
                 is_pdf_encrypted = item.get("is_pdf_encrypted")
 
-from Extractor.modules.custom_crypto import encrypt_direct_url
+                from Extractor.modules.custom_crypto import encrypt_direct_url
                 if pdf_link:
                     if is_pdf_encrypted == 1 or is_pdf_encrypted == "1":
                         key = appx_decrypt(item.get("pdf_encryption_key"))
@@ -456,8 +455,7 @@ from Extractor.modules.custom_crypto import encrypt_direct_url
                 from Extractor.modules.custom_crypto import encrypt_appx_params
                 token = headers.get("Authorization", "")
                 enc = encrypt_appx_params(api, selected_batch_id, video_id, token, user_id)
-                all_outputs.append(f"{Title}:{enc}
-")
+                all_outputs.append(f"{Title}:{enc}\n")
 
             elif item.get("material_type") == "FOLDER":
                 tasks.append(fetch_appx_folder_contents_v2(session, api, selected_batch_id, item.get("id"), headers, 1, user_id))
