@@ -272,12 +272,23 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
                     all_outputs.extend(res)
                 
                 processed += 1
-                if processed % 5 == 0:
-                    await progress_msg.edit_text(
-                        "🔄 <b>Processing Large Batch</b>\n"
-                        f"├─ Progress: {processed}/{total_items}\n"
-                        f"└─ Current: <code>{item.get('Title', 'Unknown')}</code>"
-                    )
+                if processed % 5 == 0 or processed == total_items:
+                    percent = int((processed / total_items) * 100)
+                    filled_len = int(12 * processed // total_items)
+                    bar = '▰' * filled_len + '▱' * (12 - filled_len)
+                    
+                    try:
+                        await progress_msg.edit_text(
+                            "⚡ <b>𝐄𝐱𝐭𝐫𝐚𝐜𝐭𝐢𝐨𝐧 𝐈𝐧 𝐏𝐫𝐨𝐠𝐫𝐞𝐬𝐬...</b> ⚡\n"
+                            "━━━━━━━━━━━━━━━━━━━━━\n"
+                            f"📊 <b>Pʀᴏɢʀᴇss:</b> [{bar}] <b>{percent}%</b>\n"
+                            f"📦 <b>Iᴛᴇᴍs Pʀᴏᴄᴇssᴇᴅ:</b> {processed} / {total_items}\n"
+                            f"🔍 <b>Cᴜʀʀᴇɴᴛ Iᴛᴇᴍ:</b>\n"
+                            f"└─ <code>{item.get('name') or item.get('Title', 'Unknown')}</code>\n"
+                            "━━━━━━━━━━━━━━━━━━━━━"
+                        )
+                    except Exception:
+                        pass
 
         if not all_outputs:
             await progress_msg.edit_text("❌ <b>No content found in this batch</b>")
