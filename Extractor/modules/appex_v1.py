@@ -152,6 +152,7 @@ async def api_v1(bot, m):
 
 async def process_course_data(raw_text05, raw_text1, hdr, editable, userid, bot, m, token, topicid):
     total_links = 0
+    processed_in_v1 = 0
     course_title = ""  
     for data in topicid:
         if data['id'] == raw_text1:
@@ -180,12 +181,40 @@ async def process_course_data(raw_text05, raw_text1, hdr, editable, userid, bot,
             gg = output5["data"]
         
             for video in gg:
+                processed_in_v1 += 1
+                if processed_in_v1 % 5 == 0:
+                    try:
+                        asyncio.run_coroutine_threadsafe(
+                            editable.edit(
+                                "⚡ <b>𝐄𝐱𝐭𝐫𝐚𝐜𝐭𝐢𝐨𝐧 𝐈𝐧 𝐏𝐫𝐨𝐠𝐫𝐞𝐬𝐬 (V1)...</b> ⚡\n"
+                                "━━━━━━━━━━━━━━━━━━━━━\n"
+                                f"📦 <b>Iᴛᴇᴍs Pʀᴏᴄᴇssᴇᴅ:</b> {processed_in_v1}\n"
+                                f"🔍 <b>Cᴜʀʀᴇɴᴛ Iᴛᴇᴍ:</b>\n"
+                                f"└─ <code>{video.get('Title', 'Unknown')}</code>\n"
+                                "━━━━━━━━━━━━━━━━━━━━━"
+                            ),
+                            bot.loop
+                        )
+                    except Exception:
+                        pass
+                
                 if video.get("download_link"):
                     video_title = video["Title"].replace('||', '').replace('#', '').replace(':', '').replace(',', '').replace('@', '').replace('|', '')
                     fuck = video["download_link"]
                     video_link = decrypt((fuck).split(":")[0])
+                    
+                    # Extract key from encrypted_links if available
+                    key_val = ""
+                    encrypted_links = video.get("encrypted_links", [])
+                    if encrypted_links:
+                        k = encrypted_links[0].get("key")
+                        if k:
+                            k1 = decrypt1(k)
+                            k2 = decode_base64(k1)
+                            key_val = f"*{k2}"
+                    
                     with open(f"{course_title}.txt", 'a') as f:
-                        f.write(f"({subject_title}) {video_title}:{video_link}\n")
+                        f.write(f"({subject_title}) {video_title}:{video_link}{key_val}\n")
                         total_links += 1
 
                     p1 = video.get("pdf_link", "")
