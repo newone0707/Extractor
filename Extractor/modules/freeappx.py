@@ -46,50 +46,64 @@ def appx_decrypt(enc):
 
 
 async def fetch_appx_html_to_json(session, url, headers=None, data=None):
-    try:
-        if data:
-            async with session.post(url, headers=headers, data=data) as response:
-                text = await response.text()
-        else:
-            async with session.get(url, headers=headers) as response:
-                text = await response.text()
-
+    for attempt in range(4):  # retry up to 4 times on 429
         try:
-            return json.loads(text)
-
-        except json.JSONDecodeError:
-            match = re.search(r'\{"status":', text, re.DOTALL)
-            if match:
-                json_str = text[match.start():]
-                try:
-                    open_brace_count = 0
-                    close_brace_count = 0
-                    json_end = -1
-
-                    for i, char in enumerate(json_str):
-                        if char == '{':
-                            open_brace_count += 1
-                        elif char == '}':
-                            close_brace_count += 1
-
-                        if open_brace_count > 0 and open_brace_count == close_brace_count:
-                            json_end = i + 1
-                            break
-
-                    if json_end != -1:
-                        return json.loads(json_str[:json_end])
-                    else:
-                        logging.error("Could not find matching closing brace } . json string: ", json_str)
-                        return None
-                except json.JSONDecodeError:
-                    logging.error("Could not parse JSON from the end. ", json_str)
-                    return None
+            if data:
+                async with session.post(url, headers=headers, data=data) as response:
+                    if response.status == 429:
+                        wait = 3 * (attempt + 1)
+                        logging.warning(f"429 Rate limit on {url}, waiting {wait}s...")
+                        await asyncio.sleep(wait)
+                        continue
+                    text = await response.text()
             else:
-                logging.error("Could not find JSON at the end. Response content: ", text)
-                return None
-    except Exception as e:
-        logging.exception(f"An error occurred during the request: {e}")
-        return None
+                async with session.get(url, headers=headers) as response:
+                    if response.status == 429:
+                        wait = 3 * (attempt + 1)
+                        logging.warning(f"429 Rate limit on {url}, waiting {wait}s...")
+                        await asyncio.sleep(wait)
+                        continue
+                    text = await response.text()
+
+            try:
+                return json.loads(text)
+
+            except json.JSONDecodeError:
+                match = re.search(r'\{"status":', text, re.DOTALL)
+                if match:
+                    json_str = text[match.start():]
+                    try:
+                        open_brace_count = 0
+                        close_brace_count = 0
+                        json_end = -1
+
+                        for i, char in enumerate(json_str):
+                            if char == '{':
+                                open_brace_count += 1
+                            elif char == '}':
+                                close_brace_count += 1
+
+                            if open_brace_count > 0 and open_brace_count == close_brace_count:
+                                json_end = i + 1
+                                break
+
+                        if json_end != -1:
+                            return json.loads(json_str[:json_end])
+                        else:
+                            logging.error("Could not find matching closing brace } . json string: ", json_str)
+                            return None
+                    except json.JSONDecodeError:
+                        logging.error("Could not parse JSON from the end. ", json_str)
+                        return None
+                else:
+                    logging.error("Could not find JSON at the end. Response content: ", text)
+                    return None
+            return None  # only reached on decode error paths
+        except Exception as e:
+            logging.exception(f"An error occurred during the request: {e}")
+            await asyncio.sleep(2)
+    return None
+
 
 
 async def fetch_appx_video_id_details_v2(session, api, selected_batch_id, video_id, ytFlag, headers, folder_wise_course, user_id):
