@@ -129,8 +129,21 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
 
         if vl:
             dvl = decrypt(vl)
+            
+            # Extract key from encrypted_links if available
+            key_val = None
+            encrypted_links = data.get("encrypted_links", [])
+            if encrypted_links:
+                k = encrypted_links[0].get("key")
+                if k:
+                    k1 = decrypt(k)
+                    key_val = decode_base64(k1)
+                    
             if dvl:
-                outputs.append(f"{prefix}{vt} : {encrypt_direct_url(dvl)}")
+                if key_val:
+                    outputs.append(f"{prefix}{vt} : {encrypt_direct_url(dvl, key_val)}")
+                else:
+                    outputs.append(f"{prefix}{vt} : {encrypt_direct_url(dvl)}")
         elif not fl:
             for link in data.get("encrypted_links", []):
                 a = link.get("path")
