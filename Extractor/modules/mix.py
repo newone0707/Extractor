@@ -495,6 +495,8 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
         all_outputs = []
         limit = 150 if test_mode else None
         tasks = []
+        total_items = 0
+        processed = 0
         
         if "data" in j2:
             total_items = len(j2["data"])
