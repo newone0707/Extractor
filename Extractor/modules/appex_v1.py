@@ -227,14 +227,25 @@ async def process_course_data(raw_text05, raw_text1, hdr, editable, userid, bot,
                     r4 = json.loads(html6)
                     vt = r4["data"].get("Title", "")
                     vl = r4["data"].get("download_link", "")
+                    encrypted_links = r4["data"].get("encrypted_links", [])
+                    
+                    key_str = ""
+                    if encrypted_links:
+                        for link in encrypted_links:
+                            k = link.get("key")
+                            if k:
+                                k1 = decrypt1(k)
+                                k2 = decode_base64(k1)
+                                key_str = f"*{k2}"
+                                break
+
                     if vl:
                         dvl = decrypt1(vl)
-                        #print(f"({subject_title}) {vt}:{dvl}")
+                        #print(f"({subject_title}) {vt}:{dvl}{key_str}")
                         with open(f"{course_title}.txt", 'a') as f:
-                            f.write(f"({subject_title}) {vt}:{dvl}\n")
+                            f.write(f"({subject_title}) {vt}:{dvl}{key_str}\n")
                             total_links += 1
-                    else:
-                        encrypted_links = r4["data"].get("encrypted_links", [])
+                    elif encrypted_links:
                         for link in encrypted_links:
                             a = link.get("path")
                             k = link.get("key")
