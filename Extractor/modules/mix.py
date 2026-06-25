@@ -189,7 +189,13 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                     else:
                         da = a
                     if da:
-                        outputs.append(f"{prefix}{vt} : {da}")
+                        key_str_regex = ""
+                        if 'encrypted-' in da:
+                            import re
+                            m = re.search(r'encrypted-([a-fA-F0-9]+)', da)
+                            if m:
+                                key_str_regex = f"*{m.group(1)}"
+                        outputs.append(f"{prefix}{vt} : {da}{key_str_regex}")
                         break
 
         for pdf_num in range(1, 3):
@@ -386,6 +392,16 @@ async def run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2
                                     if m:
                                         k2 = m.group(1)
                                 all_outputs.append(f"({subject_title}) {vt}:{da}*{k2}")
+                                break
+                            elif a:
+                                da = decrypt(a.split(":")[0])
+                                key_str_regex = ""
+                                if 'encrypted-' in da:
+                                    import re
+                                    m = re.search(r'encrypted-([a-fA-F0-9]+)', da)
+                                    if m:
+                                        key_str_regex = f"*{m.group(1)}"
+                                all_outputs.append(f"({subject_title}) {vt}:{da}{key_str_regex}")
                                 break
                                 
                     if "material_type" in j6["data"]:
