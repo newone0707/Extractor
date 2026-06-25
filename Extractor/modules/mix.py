@@ -395,7 +395,7 @@ async def run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2
         if os.path.exists(filename):
             os.remove(filename)
 
-async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start, end, pricing, input2, m1, m2):
+async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start, end, pricing, input2, m1, m2, test_mode=False):
     try:
         progress_msg = await message.reply_text(
             "🔄 <b>Processing Large Batch</b>\n"
@@ -419,7 +419,7 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
                 "⚠️ <b>No Folders Found</b>\n\n"
                 "Switching to V1 (Direct Topic) Extraction Method..."
             )
-            await run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start, end, pricing, input2, m1, m2, progress_msg)
+            await run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start, end, pricing, input2, m1, m2, progress_msg, test_mode)
             return
 
         all_outputs = []
