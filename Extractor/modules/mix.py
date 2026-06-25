@@ -225,7 +225,7 @@ async def fetch_folder_contents(api_base, course_id, folder_id, headers, current
                 await asyncio.sleep(0.5)
                 
     
-                if limit and output_list is not None and len(output_list) >= limit:
+                if limit and output_list is not None and (len(output_list) + len(outputs)) >= limit:
                     break
                 if is_folder:
                     res = await fetch_folder_contents(api_base, course_id, item.get("id"), headers, new_path, userid, progress_callback, limit, output_list)
@@ -234,6 +234,8 @@ async def fetch_folder_contents(api_base, course_id, folder_id, headers, current
                 
                 if res:
                     outputs.extend(res)
+                    if output_list is not None:
+                        output_list.extend(res)
 
         return outputs
 
