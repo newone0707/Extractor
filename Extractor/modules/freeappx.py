@@ -136,7 +136,7 @@ async def fetch_appx_video_id_details_v2(session, api, selected_batch_id, video_
                         if key:
                             output.append(f"{Title}:{pdf_link2}*{key}\n")
                         else:
-                            output.append(f"{Title}:{pdf_link2)}\n")
+                            output.append(f"{Title}:{pdf_link2}\n")
                     else:
                         output.append(f"{Title}:{pdf_link2}\n")
 
