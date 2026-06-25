@@ -49,8 +49,7 @@ def decode_base64(encoded_str):
         decoded_bytes = base64.b64decode(encoded_str)
         return decoded_bytes.decode('utf-8')
     except Exception as e:
-        logger.error(f"Base64 decoding error: {e}")
-        return ""
+        return encoded_str
 
 semaphore = asyncio.Semaphore(5)
 
@@ -118,6 +117,12 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                     if key_val:
                         key_str = f"*{key_val}"
                         
+            if not key_str and 'encrypted-' in item_link:
+                import re
+                m = re.search(r'encrypted-([a-fA-F0-9]+)', item_link)
+                if m:
+                    key_str = f"*{m.group(1)}"
+                    
             fallback_outputs.append(f"{prefix}{vt} : {item_link}{key_str}")
 
         if not r4 or not r4.get("data"):
@@ -320,7 +325,13 @@ async def run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2
                         if k:
                             k1 = decrypt(k)
                             k2 = decode_base64(k1)
-                            key_val = f"*{k2}"
+                            if k2:
+                                key_val = f"*{k2}"
+                    if not key_val and 'encrypted-' in video_link:
+                        import re
+                        m = re.search(r'encrypted-([a-fA-F0-9]+)', video_link)
+                        if m:
+                            key_val = f"*{m.group(1)}"
                     all_outputs.append(f"({subject_title}) {vt}:{video_link}{key_val}")
                 else:
                     vi = video.get("id")
@@ -344,6 +355,11 @@ async def run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2
                                 break
                     if vl2:
                         dvl = decrypt(vl2.split(":")[0])
+                        if not key_str and 'encrypted-' in dvl:
+                            import re
+                            m = re.search(r'encrypted-([a-fA-F0-9]+)', dvl)
+                            if m:
+                                key_str = f"*{m.group(1)}"
                         all_outputs.append(f"({subject_title}) {vt}:{dvl}{key_str}")
                     elif encrypted_links:
                         for link in encrypted_links:
@@ -353,6 +369,11 @@ async def run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2
                                 da = decrypt(a.split(":")[0])
                                 k1 = decrypt(k)
                                 k2 = decode_base64(k1)
+                                if not k2 and 'encrypted-' in da:
+                                    import re
+                                    m = re.search(r'encrypted-([a-fA-F0-9]+)', da)
+                                    if m:
+                                        k2 = m.group(1)
                                 all_outputs.append(f"({subject_title}) {vt}:{da}*{k2}")
                                 break
                                 
