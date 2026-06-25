@@ -55,12 +55,22 @@ async def fetch_item_details(session, api_base, course_id, item, headers):
 
                 vt = data.get("Title", "")
                 vl = data.get("download_link", "")
+                encrypted_links = data.get("encrypted_links", [])
+
+                key_str = ""
+                if encrypted_links:
+                    for link in encrypted_links:
+                        k = link.get("key")
+                        if k:
+                            k1 = decrypt(k)
+                            k2 = decode_base64(k1)
+                            key_str = f"*{k2}"
+                            break
 
                 if vl:
                     dvl = decrypt(vl)
-                    outputs.append(f"{vt}:{dvl}")
-                else:
-                    encrypted_links = data.get("encrypted_links", [])
+                    outputs.append(f"{vt}:{dvl}{key_str}")
+                elif encrypted_links:
                     for link in encrypted_links:
                         a = link.get("path")
                         k = link.get("key")
