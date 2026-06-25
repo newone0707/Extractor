@@ -239,6 +239,163 @@ async def fetch_folder_contents(api_base, course_id, folder_id, headers, current
         logger.error(f"Error fetching folder contents: {e}")
         return []
 
+
+async def run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2, api_base, course_name, start_time, start, end, pricing, input2, m1, m2, progress_msg):
+    raw_text05 = api_base.replace("https://", "").replace("http://", "")
+    course_title = course_name
+    
+    url3 = f"{api_base}/get/allsubjectfrmlivecourseclass?courseid={raw_text2}&start=-1"
+    j3 = await safe_fetch_json(url3, hdr1)
+    if not j3 or not j3.get("data"):
+        await progress_msg.edit_text("❌ <b>No Content Found in V1 Fallback either!</b>")
+        return
+
+    all_outputs = []
+    state = {"processed": 0, "last_edit": time.time()}
+
+    async def my_callback(item_name):
+        state["processed"] += 1
+        if state["processed"] % 5 == 0 and (time.time() - state["last_edit"] > 2):
+            state["last_edit"] = time.time()
+            try:
+                await progress_msg.edit_text(
+                    "⚡ <b>𝐄𝐱𝐭𝐫𝐚𝐜𝐭𝐢𝐨𝐧 𝐈𝐧 𝐏𝐫𝐨𝐠𝐫𝐞𝐬𝐬 (V1 Fᴀʟʟʙᴀᴄᴋ)...</b> ⚡\n"
+                    "━━━━━━━━━━━━━━━━━━━━━\n"
+                    f"📦 <b>Iᴛᴇᴍs Pʀᴏᴄᴇssᴇᴅ:</b> {state['processed']}\n"
+                    f"🔍 <b>Cᴜʀʀᴇɴᴛ Iᴛᴇᴍ:</b>\n"
+                    f"└─ <code>{item_name}</code>\n"
+                    "━━━━━━━━━━━━━━━━━━━━━"
+                )
+            except Exception:
+                pass
+
+    for subject in j3.get("data", []):
+        tids = subject["subjectid"]
+        subject_title = subject["subject_name"].replace(':', '').replace('/', '_')
+        
+        url4 = f"{api_base}/get/alltopicfrmlivecourseclass?courseid={raw_text2}&subjectid={tids}&start=-1"
+        j4 = await safe_fetch_json(url4, hdr1)
+        if not j4 or not j4.get("data"):
+            continue
+            
+        for topic in j4.get("data", []):
+            tsids = topic['topicid']
+            url5 = f"{api_base}/get/livecourseclassbycoursesubtopconceptapiv3?topicid={tsids}&start=-1&courseid={raw_text2}&subjectid={tids}"
+            j5 = await safe_fetch_json(url5, hdr1)
+            if not j5 or not j5.get("data"):
+                continue
+                
+            for video in j5.get("data", []):
+                await my_callback(video.get("Title", "Unknown"))
+                
+                vt = video["Title"].replace('||', '').replace('#', '').replace(':', '').replace(',', '').replace('@', '').replace('|', '')
+                vl = video.get("download_link", "")
+                
+                if vl:
+                    video_link = decrypt(vl.split(":")[0])
+                    key_val = ""
+                    encrypted_links = video.get("encrypted_links", [])
+                    if encrypted_links:
+                        k = encrypted_links[0].get("key")
+                        if k:
+                            k1 = decrypt(k)
+                            k2 = decode_base64(k1)
+                            key_val = f"*{k2}"
+                    all_outputs.append(f"({subject_title}) {vt}:{video_link}{key_val}")
+                else:
+                    vi = video.get("id")
+                    url6 = f"{api_base}/get/fetchVideoDetailsById?course_id={raw_text2}&video_id={vi}&ytflag=1&folder_wise_course=1"
+                    j6 = await safe_fetch_json(url6, hdr1)
+                    if not j6 or "data" not in j6:
+                        continue
+                        
+                    vt = j6["data"].get("Title", vt).replace(':', '')
+                    vl2 = j6["data"].get("download_link", "")
+                    encrypted_links = j6["data"].get("encrypted_links", [])
+                    
+                    key_str = ""
+                    if encrypted_links:
+                        for link in encrypted_links:
+                            k = link.get("key")
+                            if k:
+                                k1 = decrypt(k)
+                                k2 = decode_base64(k1)
+                                key_str = f"*{k2}"
+                                break
+                    if vl2:
+                        dvl = decrypt(vl2.split(":")[0])
+                        all_outputs.append(f"({subject_title}) {vt}:{dvl}{key_str}")
+                    elif encrypted_links:
+                        for link in encrypted_links:
+                            a = link.get("path")
+                            k = link.get("key")
+                            if a and k:
+                                da = decrypt(a.split(":")[0])
+                                k1 = decrypt(k)
+                                k2 = decode_base64(k1)
+                                all_outputs.append(f"({subject_title}) {vt}:{da}*{k2}")
+                                break
+                                
+                    if "material_type" in j6["data"]:
+                        mt = j6["data"]["material_type"]
+                        if mt == "VIDEO" or mt == "PDF":
+                            p1 = j6["data"].get("pdf_link", "")
+                            p2 = j6["data"].get("pdf_link2", "")
+                            if p1:
+                                dp1 = decrypt(p1.split(":")[0])
+                                pp1 = j6["data"].get("pdf_encryption_key", "")
+                                pkey = pp1.split(":")[0] if pp1 else ""
+                                p1key = decrypt(pkey) if pkey else ""
+                                all_outputs.append(f"({subject_title}) {vt} PDF:{dp1}*{p1key}")
+                            if p2:
+                                dp2 = decrypt(p2.split(":")[0])
+                                pp2 = j6["data"].get("pdf_encryption_key", "")
+                                pkey = pp2.split(":")[0] if pp2 else ""
+                                p2key = decrypt(pkey) if pkey else ""
+                                all_outputs.append(f"({subject_title}) {vt} PDF-2:{dp2}*{p2key}")
+                                
+    if not all_outputs:
+        await progress_msg.edit_text("❌ <b>No content found in V1 Fallback either!</b>")
+        return
+        
+    filename = f"{raw_text2}_{course_name}.txt"
+    if '/' in filename:
+        filename = filename.replace("/", "").replace(" ", "_")
+        
+    with open(filename, 'w', encoding='utf-8') as f:
+        f.write("\n".join(all_outputs) + "\n")
+        
+    caption_details = api_base.replace("https://", "").replace("http://", "").replace("api.classx.co.in", "").upper()
+    total_links = len(all_outputs)
+    from datetime import datetime
+    import pytz
+    india_timezone = pytz.timezone('Asia/Kolkata')
+    times = datetime.now(india_timezone).strftime("%d-%m-%Y")
+    
+    cap=(
+        f"࿇ ══━━ mention ━━══ ࿇\n\n"
+        f"**🌀 Batch Id :** {raw_text2}\n\n"
+        f"**✳️ App :** {caption_details} (AppX V1 Fallback)\n\n"
+        f"**📚 Batch :** `{course_name}`\n\n"
+        f"**🔰 Total Links :** {total_links}\n\n"
+        f"**❄️ Date :** {times}"
+    )
+
+    try:
+        if m1:
+            await m1.delete(True)
+        if m2:
+            await m2.delete(True)
+        await app.send_document(message.chat.id, document=filename, caption=cap)
+        from config import PREMIUM_LOGS
+        await app.send_document(PREMIUM_LOGS, document=filename, caption=cap)
+        await progress_msg.delete(True)
+    except Exception as e:
+        print(e)
+    finally:
+        if os.path.exists(filename):
+            os.remove(filename)
+
 async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start, end, pricing, input2, m1, m2):
     try:
         progress_msg = await message.reply_text(
@@ -260,9 +417,10 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
         
         if not j2 or not j2.get("data"):
             await progress_msg.edit_text(
-                "❌ <b>No Content Found</b>\n\n"
-                "Try switching to v3 and retry."
+                "⚠️ <b>No Folders Found</b>\n\n"
+                "Switching to V1 (Direct Topic) Extraction Method..."
             )
+            await run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2, api_base, course_name, start_time, start, end, pricing, input2, m1, m2, progress_msg)
             return
 
         all_outputs = []
