@@ -306,8 +306,17 @@ async def appex_v5_txt(app, message, api, name, predefined_credentials=None):
         }
         
     else:
-        userid = "extracted_userid_from_token"
         token = raw_text
+        # Extract userid from JWT token payload
+        try:
+            import base64 as _base64
+            payload_part = token.split('.')[1]
+            payload_part += '=' * (-len(payload_part) % 4)  # pad base64
+            payload_json = _base64.urlsafe_b64decode(payload_part).decode('utf-8')
+            payload_data = json.loads(payload_json)
+            userid = str(payload_data.get('id', payload_data.get('userId', payload_data.get('userid', ''))))
+        except Exception:
+            userid = ''
         hdr1 = {
             "Client-Service": "Appx",
             "source": "website",
@@ -318,7 +327,25 @@ async def appex_v5_txt(app, message, api, name, predefined_credentials=None):
         
     scraper = cloudscraper.create_scraper() 
     try:
-        mc1 = scraper.get(f"{api_base}/get/mycoursev2?userid={userid}", headers=hdr1).json()
+        resp = scraper.get(f"{api_base}/get/mycoursev2?userid={userid}", headers=hdr1)
+        if resp.status_code == 200 and resp.text.strip().startswith('{'):
+            mc1 = resp.json()
+        else:
+            # Try alternate endpoint
+            resp2 = scraper.get(f"{api_base}/get/courselistnewv2", headers=hdr1)
+            if resp2.status_code == 200 and resp2.text.strip().startswith('{'):
+                mc1 = resp2.json()
+            else:
+                resp3 = scraper.get(f"{api_base}/get/courselist", headers=hdr1)
+                if resp3.status_code == 200 and resp3.text.strip().startswith('{'):
+                    mc1 = resp3.json()
+                else:
+                    error_msg = (
+                        "❌ <b>Could not fetch courses</b>\n\n"
+                        f"API returned: <code>{resp.status_code}</code>\n\n"
+                        "Please check your token and API URL."
+                    )
+                    return await message.reply_text(error_msg)
         
     except json.JSONDecodeError as e:
         error_msg = (
