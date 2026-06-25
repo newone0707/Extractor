@@ -107,7 +107,18 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
             if not item_link.startswith('http') and ':' in item_link:
                 dec = decrypt(item_link)
                 if dec: item_link = dec
-            fallback_outputs.append(f"{prefix}{vt} : {item_link}")
+                  
+            key_str = ""
+            encrypted_links = item.get("encrypted_links", [])
+            if encrypted_links:
+                k = encrypted_links[0].get("key")
+                if k:
+                    k1 = decrypt(k)
+                    key_val = decode_base64(k1)
+                    if key_val:
+                        key_str = f"*{key_val}"
+                        
+            fallback_outputs.append(f"{prefix}{vt} : {item_link}{key_str}")
 
         if not r4 or not r4.get("data"):
             return fallback_outputs
