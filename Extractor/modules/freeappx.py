@@ -148,8 +148,9 @@ async def fetch_appx_video_id_details_v2(session, api, selected_batch_id, video_
         return output
 
     except Exception as e:
-        return [
-            f"User ID: {user_id} - An error occurred while fetching details for Course_id : {selected_batch_id}}*{video ID {video_id}: {str(e}\n"]
+        output = [f"User ID: {user_id} - An error occurred while fetching details for Course_id : {selected_batch_id} video ID {video_id}: {str(e)}\n"]
+        print(f"Error fetching details for Course_id : {selected_batch_id} video ID {video_id}: {str(e)}")
+        return output
 
 
 async def fetch_appx_folder_contents_v2(session, api, selected_batch_id, folder_id, headers, folder_wise_course, user_id):
@@ -267,7 +268,7 @@ async def fetch_appx_video_id_details_v3(session, api, selected_batch_id, video_
                         if key:
                             output.append(f"{Title}:{pdf_link2}*{key}\n")
                         else:
-                            output.append(f"{Title}:{pdf_link2)}\n")
+                            output.append(f"{Title}:{pdf_link2}\n")
                     else:
                         output.append(f"{Title}:{pdf_link2}\n")
             else:
@@ -278,8 +279,7 @@ async def fetch_appx_video_id_details_v3(session, api, selected_batch_id, video_
         return output
 
     except Exception as e:
-        return [
-            f"User ID: {user_id} - An error occurred while fetching details for Course_id : {selected_batch_id}}*{video ID {video_id}: {str(e}\n"]
+        return [f"User ID: {user_id} - An error occurred while fetching details for Course_id: {selected_batch_id}, video ID: {video_id}: {str(e)}\n"]
 
 
 def find_appx_matching_apis(search_api, appxapis_file="appxapis.json"):
