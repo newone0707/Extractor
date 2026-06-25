@@ -368,6 +368,10 @@ async def appex_v3_txt_real(app, message, api, name):
 
 # Split the input into individual batch IDs
     batch_ids = input2.text.strip().split("&")
+    test_mode = False
+    if "test" in [b.lower().strip() for b in batch_ids]:
+        test_mode = True
+        batch_ids = [b for b in batch_ids if b.lower().strip() != "test"]
 
 # Trim whitespace and filter invalid batch IDs
     batch_ids = [batch.strip() for batch in batch_ids if batch.strip() in valid_ids]
@@ -400,7 +404,7 @@ async def appex_v3_txt_real(app, message, api, name):
             course_name = next((ct.get("course_name") for ct in mc1["data"] if ct.get("id") == raw_text2), "Course")
             sanitized_course_name = course_name.replace(':', '_').replace('/', '_')
         
-            await v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start, end, pricing, input2, m1, m2)
+            await v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start, end, pricing, input2, m1, m2, test_mode)
             continue
 
         for i in r.get("data", []):
@@ -472,7 +476,7 @@ async def appex_v3_txt_real(app, message, api, name):
                 
                     course_name = next((ct.get("course_name") for ct in mc1["data"] if ct.get("id") == raw_text2), "Course")
                     sanitized_course_name = course_name.replace(':', '_').replace('/', '_')
-                    await v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start, end, pricing, input2, m1, m2)
+                    await v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start, end, pricing, input2, m1, m2, test_mode)
                 finally:
                     if os.path.exists(filename1):
                         os.remove(filename1)
