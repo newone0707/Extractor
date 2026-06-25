@@ -157,6 +157,12 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                     key_val = decode_base64(k1)
                     
             if dvl:
+                if not key_val and 'encrypted-' in dvl:
+                    import re
+                    m = re.search(r'encrypted-([a-fA-F0-9]+)', dvl)
+                    if m:
+                        key_val = m.group(1)
+                
                 if key_val:
                     outputs.append(f"{prefix}{vt} : {dvl}*{key_val}")
                 else:
@@ -170,6 +176,11 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                     k2 = decode_base64(k1)
                     da = decrypt(a)
                     if da:
+                        if not k2 and 'encrypted-' in da:
+                            import re
+                            m = re.search(r'encrypted-([a-fA-F0-9]+)', da)
+                            if m:
+                                k2 = m.group(1)
                         outputs.append(f"{prefix}{vt} : {da}*{k2}")
                         break
                 elif a:
