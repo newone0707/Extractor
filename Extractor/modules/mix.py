@@ -86,10 +86,12 @@ async def safe_fetch_json(url, headers, max_retries=10):
         await asyncio.sleep(2 * (attempt + 1))
     return None
 
-async def fetch_item_details(api_base, course_id, item, headers, current_path="", userid=""):
+async def fetch_item_details(api_base, course_id, item, headers, current_path="", userid="", progress_callback=None):
     try:
         fi = item.get("id")
         vt = item.get("name") or item.get("Title", "") or item.get("title", "")
+        if progress_callback:
+            await progress_callback(vt)
         outputs = []
         prefix = f"[{current_path}] " if current_path else ""
         from Extractor.modules.custom_crypto import encrypt_direct_url
@@ -201,7 +203,7 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
         logger.error(f"Error fetching item details: {e}")
         return []
 
-async def fetch_folder_contents(api_base, course_id, folder_id, headers, current_path="", userid=""):
+async def fetch_folder_contents(api_base, course_id, folder_id, headers, current_path="", userid="", progress_callback=None):
     try:
         outputs = []
         url = f"{api_base}/get/folder_contentsv2?course_id={course_id}&parent_id={folder_id}&folder_wise_course=1"
@@ -224,9 +226,9 @@ async def fetch_folder_contents(api_base, course_id, folder_id, headers, current
                 await asyncio.sleep(0.5)
                 
                 if is_folder:
-                    res = await fetch_folder_contents(api_base, course_id, item.get("id"), headers, new_path, userid)
+                    res = await fetch_folder_contents(api_base, course_id, item.get("id"), headers, new_path, userid, progress_callback)
                 else:
-                    res = await fetch_item_details(api_base, course_id, item, headers, new_path, userid)
+                    res = await fetch_item_details(api_base, course_id, item, headers, new_path, userid, progress_callback)
                 
                 if res:
                     outputs.extend(res)
@@ -270,6 +272,24 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
             total_items = len(j2["data"])
             processed = 0
             
+            state = {"processed": 0, "last_edit": time.time()}
+            
+            async def my_callback(item_name):
+                state["processed"] += 1
+                if state["processed"] % 5 == 0 and (time.time() - state["last_edit"] > 2):
+                    state["last_edit"] = time.time()
+                    try:
+                        await progress_msg.edit_text(
+                            "⚡ <b>𝐄𝐱𝐭𝐫𝐚𝐜𝐭𝐢𝐨𝐧 𝐈𝐧 𝐏𝐫𝐨𝐠𝐫𝐞𝐬𝐬...</b> ⚡\n"
+                            "━━━━━━━━━━━━━━━━━━━━━\n"
+                            f"📦 <b>Iᴛᴇᴍs Pʀᴏᴄᴇssᴇᴅ:</b> {state['processed']}\n"
+                            f"🔍 <b>Cᴜʀʀᴇɴᴛ Iᴛᴇᴍ:</b>\n"
+                            f"└─ <code>{item_name}</code>\n"
+                            "━━━━━━━━━━━━━━━━━━━━━"
+                        )
+                    except Exception:
+                        pass
+
             for item in j2["data"]:
                 item_type = item.get('resource_type', item.get('type'))
                 is_folder = str(item.get('is_folder')) == "1" or str(item_type) in ["2", "0"] or str(item.get('material_type')).upper() == "FOLDER"
@@ -277,31 +297,14 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
                 await asyncio.sleep(0.5)
                 
                 if is_folder:
-                    res = await fetch_folder_contents(api_base, raw_text2, item.get("id"), hdr1, item.get("Title", ""), userid)
+                    res = await fetch_folder_contents(api_base, raw_text2, item.get("id"), hdr1, item.get("Title", ""), userid, my_callback)
                 else:
-                    res = await fetch_item_details(api_base, raw_text2, item, hdr1, "", userid)
+                    res = await fetch_item_details(api_base, raw_text2, item, hdr1, "", userid, my_callback)
                 
                 if res:
                     all_outputs.extend(res)
                 
                 processed += 1
-                if processed % 5 == 0 or processed == total_items:
-                    percent = int((processed / total_items) * 100)
-                    filled_len = int(12 * processed // total_items)
-                    bar = '▰' * filled_len + '▱' * (12 - filled_len)
-                    
-                    try:
-                        await progress_msg.edit_text(
-                            "⚡ <b>𝐄𝐱𝐭𝐫𝐚𝐜𝐭𝐢𝐨𝐧 𝐈𝐧 𝐏𝐫𝐨𝐠𝐫𝐞𝐬𝐬...</b> ⚡\n"
-                            "━━━━━━━━━━━━━━━━━━━━━\n"
-                            f"📊 <b>Pʀᴏɢʀᴇss:</b> [{bar}] <b>{percent}%</b>\n"
-                            f"📦 <b>Iᴛᴇᴍs Pʀᴏᴄᴇssᴇᴅ:</b> {processed} / {total_items}\n"
-                            f"🔍 <b>Cᴜʀʀᴇɴᴛ Iᴛᴇᴍ:</b>\n"
-                            f"└─ <code>{item.get('name') or item.get('Title', 'Unknown')}</code>\n"
-                            "━━━━━━━━━━━━━━━━━━━━━"
-                        )
-                    except Exception:
-                        pass
 
         if not all_outputs:
             await progress_msg.edit_text("❌ <b>No content found in this batch</b>")
