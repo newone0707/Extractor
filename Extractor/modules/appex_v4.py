@@ -98,8 +98,19 @@ async def process_video(session, api_base, bi, si, sn, ti, tn, video, hdr1):
 
         if vl:
             dvl = decrypt(vl)
+            
+            encrypted_links = r4.get("data", {}).get("encrypted_links", [])
+            key_str = ""
+            if encrypted_links:
+                first_link = encrypted_links[0]
+                k = first_link.get("key")
+                if k:
+                    k1 = decrypt(k)
+                    k2 = decode_base64(k1)
+                    key_str = f"*{k2}"
+
             if dvl: 
-                lines.append(f"{vt}:{dvl}\n")
+                lines.append(f"{vt}:{dvl}{key_str}\n")
                  
         else:
             encrypted_links = r4.get("data", {}).get("encrypted_links", [])
