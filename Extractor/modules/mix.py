@@ -94,8 +94,7 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
             await progress_callback(vt)
         outputs = []
         prefix = f"[{current_path}] " if current_path else ""
-        from Extractor.modules.custom_crypto import encrypt_direct_url
-        
+                
         url = f"{api_base}/get/fetchVideoDetailsById?course_id={course_id}&folder_wise_course=1&ytflag=1&video_id={fi}"
         if userid:
             url += f"&userid={userid}"
@@ -108,7 +107,7 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
             if not item_link.startswith('http') and ':' in item_link:
                 dec = decrypt(item_link)
                 if dec: item_link = dec
-            fallback_outputs.append(f"{prefix}{vt} : {encrypt_direct_url(item_link)}")
+            fallback_outputs.append(f"{prefix}{vt} : {item_link}")
 
         if not r4 or not r4.get("data"):
             return fallback_outputs
@@ -127,7 +126,7 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                     final_link = f"https://appxsignurl.vercel.app/appx/{dfl}?appxv=3"
                 else:
                     final_link = f"https://youtu.be/{dfl}"
-                outputs.append(f"{prefix}{vt} : {encrypt_direct_url(final_link)}")
+                outputs.append(f"{prefix}{vt} : {final_link}")
 
         if vl:
             dvl = decrypt(vl)
@@ -143,9 +142,9 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                     
             if dvl:
                 if key_val:
-                    outputs.append(f"{prefix}{vt} : {encrypt_direct_url(dvl, key_val)}")
+                    outputs.append(f"{prefix}{vt} : {dvl}*{key_val}")
                 else:
-                    outputs.append(f"{prefix}{vt} : {encrypt_direct_url(dvl)}")
+                    outputs.append(f"{prefix}{vt} : {dvl}")
         elif not fl:
             for link in data.get("encrypted_links", []):
                 a = link.get("path")
@@ -155,7 +154,7 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                     k2 = decode_base64(k1)
                     da = decrypt(a)
                     if da:
-                        outputs.append(f"{prefix}{vt} : {encrypt_direct_url(da, k2)}")
+                        outputs.append(f"{prefix}{vt} : {da}*{k2}")
                         break
                 elif a:
                     if not a.startswith('http') and ':' in a:
@@ -163,7 +162,7 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                     else:
                         da = a
                     if da:
-                        outputs.append(f"{prefix}{vt} : {encrypt_direct_url(da)}")
+                        outputs.append(f"{prefix}{vt} : {da}")
                         break
 
         for pdf_num in range(1, 3):
@@ -181,11 +180,11 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                     if pdf_key:
                         dpk = decrypt(pdf_key)
                         if dpk and dpk != "abcdefg":
-                            outputs.append(f"{prefix}{vt} PDF{pdf_num if pdf_num > 1 else ''} : {encrypt_direct_url(dp, dpk)}")
+                            outputs.append(f"{prefix}{vt} PDF{pdf_num if pdf_num > 1 else ''} : {dp}*{dpk}")
                         else:
-                            outputs.append(f"{prefix}{vt} PDF{pdf_num if pdf_num > 1 else ''} : {encrypt_direct_url(dp)}")
+                            outputs.append(f"{prefix}{vt} PDF{pdf_num if pdf_num > 1 else ''} : {dp}")
                     else:
-                        outputs.append(f"{prefix}{vt} PDF{pdf_num if pdf_num > 1 else ''} : {encrypt_direct_url(dp)}")
+                        outputs.append(f"{prefix}{vt} PDF{pdf_num if pdf_num > 1 else ''} : {dp}")
 
         # Remove duplicates while preserving order
         seen = set()
