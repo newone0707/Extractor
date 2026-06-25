@@ -401,6 +401,10 @@ async def appex_v5_txt(app, message, api, name, predefined_credentials=None):
         return
 
     batch_ids = input2.text.strip().split("&")
+    test_mode = False
+    if "test" in [b.lower().strip() for b in batch_ids]:
+        test_mode = True
+        batch_ids = [b for b in batch_ids if b.lower().strip() != "test"]
     batch_ids = [batch.strip() for batch in batch_ids if batch.strip() in valid_ids]
 
     if not batch_ids:
@@ -427,7 +431,7 @@ async def appex_v5_txt(app, message, api, name, predefined_credentials=None):
         
         try:
             sanitized_course_name = course_name.replace(':', '_').replace('/', '_')
-            await v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start_date, end_date, price, input2, m1, m2)
+            await v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start_date, end_date, price, input2, m1, m2, test_mode)
         except Exception as e:
             print(f"Error processing batch {raw_text2}: {str(e)}")
             await message.reply_text(f"⚠️ Failed to process batch {raw_text2}")
