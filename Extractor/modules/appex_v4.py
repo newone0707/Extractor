@@ -47,18 +47,26 @@ def decode_base64(encoded_str):
     except Exception as e:
         return f"Error decoding string: {e}"
 async def fetch(session, url, headers):
-    try:
-        async with session.get(url, headers=headers) as response:
-            if response.status != 200:
-                print(f"Error fetching {url}: {response.status}")
-                return {}
-            content = await response.text()
-            
-            soup = BeautifulSoup(content, 'html.parser')
-            return json.loads(str(soup))
-    except Exception as e:
-        print(f"An error occurred while fetching {url}: {str(e)}")
-        return {}
+    for attempt in range(4):  # retry up to 4 times on 429
+        try:
+            async with session.get(url, headers=headers) as response:
+                if response.status == 429:
+                    wait = 3 * (attempt + 1)  # 3s, 6s, 9s, 12s
+                    print(f"429 Rate limit on {url}, waiting {wait}s...")
+                    await asyncio.sleep(wait)
+                    continue
+                if response.status != 200:
+                    print(f"Error fetching {url}: {response.status}")
+                    return {}
+                content = await response.text()
+                if not content.strip().startswith('{'):
+                    return {}
+                soup = BeautifulSoup(content, 'html.parser')
+                return json.loads(str(soup))
+        except Exception as e:
+            print(f"An error occurred while fetching {url}: {str(e)}")
+            await asyncio.sleep(2)
+    return {}
 
 
 async def handle_course(session, api_base, bi, si, sn, topic, hdr1):
