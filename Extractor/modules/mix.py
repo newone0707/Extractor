@@ -238,7 +238,10 @@ async def fetch_folder_contents(api_base, course_id, folder_id, headers, current
     
                 if limit and output_list is not None and (len(output_list) + len(outputs)) >= limit:
                     break
-                if is_folder:
+    
+            if limit and len(all_outputs) >= limit:
+                break
+            if is_folder:
                     res = await fetch_folder_contents(api_base, course_id, item.get("id"), headers, new_path, userid, progress_callback, limit, output_list)
                 else:
                     res = await fetch_item_details(api_base, course_id, item, headers, new_path, userid, progress_callback)
@@ -255,7 +258,7 @@ async def fetch_folder_contents(api_base, course_id, folder_id, headers, current
         return []
 
 
-async def run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2, api_base, course_name, start_time, start, end, pricing, input2, m1, m2, progress_msg):
+async def run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2, api_base, course_name, start_time, start, end, pricing, input2, m1, m2, progress_msg, test_mode=False):
     raw_text05 = api_base.replace("https://", "").replace("http://", "")
     course_title = course_name
     
@@ -303,6 +306,8 @@ async def run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2
                 continue
                 
             for video in j5.get("data", []):
+                  if limit and len(all_outputs) >= limit:
+                      break
                 await my_callback(video.get("Title", "Unknown"))
                 
                 vt = video["Title"].replace('||', '').replace('#', '').replace(':', '').replace(',', '').replace('@', '').replace('|', '')
@@ -476,7 +481,10 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
     
                 if limit and len(all_outputs) >= limit:
                     break
-                if is_folder:
+    
+            if limit and len(all_outputs) >= limit:
+                break
+            if is_folder:
                     res = await fetch_folder_contents(api_base, raw_text2, item.get("id"), hdr1, item.get("Title", ""), userid, my_callback, limit, all_outputs)
                 else:
                     res = await fetch_item_details(api_base, raw_text2, item, hdr1, "", userid, my_callback)
