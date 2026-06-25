@@ -80,7 +80,9 @@ async def api_v1(bot, m):
     mention = user.mention
     editable = await bot.send_message(m.chat.id, "**🌐 Enter API :**")
     input01: Message = await bot.listen(editable.chat.id)
-    raw_text05 = input01.text
+    raw_text05 = input01.text.strip()
+    # Strip any existing https:// prefix so we don't get https://https://...
+    raw_text05 = raw_text05.replace("https://", "").replace("http://", "").rstrip("/")
     await input01.delete(True)
     await editable.edit("Send **Token** or **ID & Password** 🧲")
     login_hdr = {
