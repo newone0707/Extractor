@@ -202,7 +202,7 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
         logger.error(f"Error fetching item details: {e}")
         return []
 
-async def fetch_folder_contents(api_base, course_id, folder_id, headers, current_path="", userid="", progress_callback=None):
+async def fetch_folder_contents(api_base, course_id, folder_id, headers, current_path="", userid="", progress_callback=None, limit=None, output_list=None):
     try:
         outputs = []
         url = f"{api_base}/get/folder_contentsv2?course_id={course_id}&parent_id={folder_id}&folder_wise_course=1"
@@ -224,8 +224,11 @@ async def fetch_folder_contents(api_base, course_id, folder_id, headers, current
                 
                 await asyncio.sleep(0.5)
                 
+    
+                if limit and output_list is not None and len(output_list) >= limit:
+                    break
                 if is_folder:
-                    res = await fetch_folder_contents(api_base, course_id, item.get("id"), headers, new_path, userid, progress_callback)
+                    res = await fetch_folder_contents(api_base, course_id, item.get("id"), headers, new_path, userid, progress_callback, limit, output_list)
                 else:
                     res = await fetch_item_details(api_base, course_id, item, headers, new_path, userid, progress_callback)
                 
@@ -249,7 +252,9 @@ async def run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2
         await progress_msg.edit_text("❌ <b>No Content Found in V1 Fallback either!</b>")
         return
 
+
     all_outputs = []
+    limit = 150 if test_mode else None
     state = {"processed": 0, "last_edit": time.time()}
 
     async def my_callback(item_name):
@@ -422,7 +427,9 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
             await run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2, api_base, sanitized_course_name, start_time, start, end, pricing, input2, m1, m2, progress_msg, test_mode)
             return
 
+
         all_outputs = []
+        limit = 150 if test_mode else None
         tasks = []
         
         if "data" in j2:
@@ -453,8 +460,11 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
                 
                 await asyncio.sleep(0.5)
                 
+    
+                if limit and len(all_outputs) >= limit:
+                    break
                 if is_folder:
-                    res = await fetch_folder_contents(api_base, raw_text2, item.get("id"), hdr1, item.get("Title", ""), userid, my_callback)
+                    res = await fetch_folder_contents(api_base, raw_text2, item.get("id"), hdr1, item.get("Title", ""), userid, my_callback, limit, all_outputs)
                 else:
                     res = await fetch_item_details(api_base, raw_text2, item, hdr1, "", userid, my_callback)
                 
