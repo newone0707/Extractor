@@ -123,7 +123,7 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                 if m:
                     key_str = f"*{m.group(1)}"
                     
-            fallback_outputs.append(f"{prefix}{vt} : {item_link}{key_str}")
+            fallback_outputs.append(f"{prefix}{vt} : {item_link}{key_str}*{course_id}*{fi}")
 
         if not r4 or not r4.get("data"):
             return fallback_outputs
@@ -142,7 +142,7 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                     final_link = f"https://appxsignurl.vercel.app/appx/{dfl}?appxv=3"
                 else:
                     final_link = f"https://youtu.be/{dfl}"
-                outputs.append(f"{prefix}{vt} : {final_link}")
+                outputs.append(f"{prefix}{vt} : {final_link}*{course_id}*{fi}")
 
         if vl:
             dvl = decrypt(vl)
@@ -164,9 +164,9 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                         key_val = m.group(1)
                 
                 if key_val:
-                    outputs.append(f"{prefix}{vt} : {dvl}*{key_val}")
+                    outputs.append(f"{prefix}{vt} : {dvl}*{key_val}*{course_id}*{fi}")
                 else:
-                    outputs.append(f"{prefix}{vt} : {dvl}")
+                    outputs.append(f"{prefix}{vt} : {dvl}*{course_id}*{fi}")
         elif not fl:
             for link in data.get("encrypted_links", []):
                 a = link.get("path")
@@ -181,7 +181,7 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                             m = re.search(r'encrypted-([a-fA-F0-9]+)', da)
                             if m:
                                 k2 = m.group(1)
-                        outputs.append(f"{prefix}{vt} : {da}*{k2}")
+                        outputs.append(f"{prefix}{vt} : {da}*{k2}*{course_id}*{fi}")
                         break
                 elif a:
                     if not a.startswith('http') and ':' in a:
@@ -195,7 +195,7 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                             m = re.search(r'encrypted-([a-fA-F0-9]+)', da)
                             if m:
                                 key_str_regex = f"*{m.group(1)}"
-                        outputs.append(f"{prefix}{vt} : {da}{key_str_regex}")
+                        outputs.append(f"{prefix}{vt} : {da}{key_str_regex}*{course_id}*{fi}")
                         break
 
         for pdf_num in range(1, 3):
