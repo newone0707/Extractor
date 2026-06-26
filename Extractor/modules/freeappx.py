@@ -111,9 +111,13 @@ async def fetch_appx_video_id_details_v2(session, api, selected_batch_id, video_
                     drm_data = res.get('data', [])
                     if drm_data and isinstance(drm_data, list) and len(drm_data) > 0:
                         path = appx_decrypt(drm_data[0].get("path", "")) if drm_data and isinstance(drm_data, list) and drm_data and drm_data[0].get("path") else None
+                        key = appx_decrypt(drm_data[0].get("key", "")) if drm_data and isinstance(drm_data, list) and drm_data and drm_data[0].get("key") else None
                             
                         if path:
-                            output.append(f"{Title}:{path}*{selected_batch_id}*{video_id}\n")
+                            if key:
+                                output.append(f"{Title}:{path}*{key}*{selected_batch_id}*{video_id}\n")
+                            else:
+                                output.append(f"{Title}:{path}*{selected_batch_id}*{video_id}\n")
                                 
                 pdf_link = appx_decrypt(data.get("pdf_link", "")) if data.get("pdf_link", "") and appx_decrypt(data.get("pdf_link", "")).endswith(".pdf") else None
 
@@ -243,9 +247,13 @@ async def fetch_appx_video_id_details_v3(session, api, selected_batch_id, video_
                     drm_data = res.get('data', [])
                     if drm_data and isinstance(drm_data, list) and len(drm_data) > 0:
                         path = appx_decrypt(drm_data[0].get("path", "")) if drm_data and isinstance(drm_data, list) and drm_data and drm_data[0].get("path") else None
+                        key = appx_decrypt(drm_data[0].get("key", "")) if drm_data and isinstance(drm_data, list) and drm_data and drm_data[0].get("key") else None
                             
                         if path:
-                            output.append(f"{Title}:{path}*{selected_batch_id}*{video_id}\n")
+                            if key:
+                                output.append(f"{Title}:{path}*{key}*{selected_batch_id}*{video_id}\n")
+                            else:
+                                output.append(f"{Title}:{path}*{selected_batch_id}*{video_id}\n")
                                 
                 pdf_link = appx_decrypt(data.get("pdf_link", "")) if data.get("pdf_link", "") and appx_decrypt(data.get("pdf_link", "")).endswith(".pdf") else None
 
