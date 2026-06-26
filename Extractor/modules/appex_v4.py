@@ -94,7 +94,7 @@ async def process_video(session, api_base, bi, si, sn, ti, tn, video, hdr1):
         if fl:
             dfl = decrypt(fl)
             final_link = f"https://youtu.be/{dfl}"
-            lines.append(f"{vt}:{final_link}\n")
+            lines.append(f"{vt}:{final_link}*{bi}*{vi}\n")
 
         if vl:
             dvl = decrypt(vl)
@@ -110,7 +110,7 @@ async def process_video(session, api_base, bi, si, sn, ti, tn, video, hdr1):
                     key_str = f"*{k2}"
 
             if dvl: 
-                lines.append(f"{vt}:{dvl}{key_str}\n")
+                lines.append(f"{vt}:{dvl}{key_str}*{bi}*{vi}\n")
                  
         else:
             encrypted_links = r4.get("data", {}).get("encrypted_links", [])
@@ -122,10 +122,10 @@ async def process_video(session, api_base, bi, si, sn, ti, tn, video, hdr1):
                     da = decrypt(a)
                     k1 = decrypt(k)
                     k2 = decode_base64(k1)
-                    lines.append(f"{vt}:{da}*{k2}\n")
+                    lines.append(f"{vt}:{da}*{k2}*{bi}*{vi}\n")
                 elif a:
                     da = decrypt(a)
-                    lines.append(f"{vt}:{da}\n")
+                    lines.append(f"{vt}:{da}*{bi}*{vi}\n")
         
         if "material_type" in r4.get("data", {}):
             mt = r4["data"]["material_type"]
