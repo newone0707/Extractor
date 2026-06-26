@@ -47,26 +47,18 @@ def decode_base64(encoded_str):
     except Exception as e:
         return f"Error decoding string: {e}"
 async def fetch(session, url, headers):
-    for attempt in range(4):  # retry up to 4 times on 429
-        try:
-            async with session.get(url, headers=headers) as response:
-                if response.status == 429:
-                    wait = 3 * (attempt + 1)  # 3s, 6s, 9s, 12s
-                    print(f"429 Rate limit on {url}, waiting {wait}s...")
-                    await asyncio.sleep(wait)
-                    continue
-                if response.status != 200:
-                    print(f"Error fetching {url}: {response.status}")
-                    return {}
-                content = await response.text()
-                if not content.strip().startswith('{'):
-                    return {}
-                soup = BeautifulSoup(content, 'html.parser')
-                return json.loads(str(soup))
-        except Exception as e:
-            print(f"An error occurred while fetching {url}: {str(e)}")
-            await asyncio.sleep(2)
-    return {}
+    try:
+        async with session.get(url, headers=headers) as response:
+            if response.status != 200:
+                print(f"Error fetching {url}: {response.status}")
+                return {}
+            content = await response.text()
+            
+            soup = BeautifulSoup(content, 'html.parser')
+            return json.loads(str(soup))
+    except Exception as e:
+        print(f"An error occurred while fetching {url}: {str(e)}")
+        return {}
 
 
 async def handle_course(session, api_base, bi, si, sn, topic, hdr1):
@@ -335,25 +327,7 @@ async def appex_v5_txt(app, message, api, name, predefined_credentials=None):
         
     scraper = cloudscraper.create_scraper() 
     try:
-        resp = scraper.get(f"{api_base}/get/mycoursev2?userid={userid}", headers=hdr1)
-        if resp.status_code == 200 and resp.text.strip().startswith('{'):
-            mc1 = resp.json()
-        else:
-            # Try alternate endpoint
-            resp2 = scraper.get(f"{api_base}/get/courselistnewv2", headers=hdr1)
-            if resp2.status_code == 200 and resp2.text.strip().startswith('{'):
-                mc1 = resp2.json()
-            else:
-                resp3 = scraper.get(f"{api_base}/get/courselist", headers=hdr1)
-                if resp3.status_code == 200 and resp3.text.strip().startswith('{'):
-                    mc1 = resp3.json()
-                else:
-                    error_msg = (
-                        "❌ <b>Could not fetch courses</b>\n\n"
-                        f"API returned: <code>{resp.status_code}</code>\n\n"
-                        "Please check your token and API URL."
-                    )
-                    return await message.reply_text(error_msg)
+        mc1 = scraper.get(f"{api_base}/get/mycoursev2?userid={userid}", headers=hdr1).json()
         
     except json.JSONDecodeError as e:
         error_msg = (
