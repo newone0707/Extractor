@@ -397,6 +397,7 @@ async def extract_batch(app, message, org_name, batch_id):
                         'accept-language': 'EN',
                         'api-version': '18',
                         'app-version': '1.4.73.2',
+                        'device-id': 'c28d3cb16bbdac01',
                         'connection': 'Keep-Alive',
                         'user-agent': 'Mobile-Android'
                     }
