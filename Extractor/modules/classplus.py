@@ -411,6 +411,8 @@ async def extract_batch(app, message, org_name, batch_id):
                             res_json = await resp.json()
                             if "url" in res_json:
                                 return res_json["url"]
+                            elif "drmUrls" in res_json and "manifestUrl" in res_json["drmUrls"]:
+                                return res_json["drmUrls"]["manifestUrl"]
                 except Exception as e:
                     print(f"Error signing URL {url}: {e}")
             return url
