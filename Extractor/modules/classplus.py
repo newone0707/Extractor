@@ -43,7 +43,7 @@ async def classplus_txt(app, message):
         try:
             org_code, mobile = user_input.split("*")
             
-            device_id = str(uuid.uuid4()).replace('-', '')
+            device_id = "c28d3cb16bbdac01"
             headers = {
     "Accept": "application/json, text/plain, */*",
     "region": "IN",
@@ -126,7 +126,7 @@ async def classplus_txt(app, message):
                                  'user-agent': 'Mobile-Android',
                                  'app-version': '1.4.65.3',
                                  'api-version': '29',
-                                 'device-id': '39F093FF35F201D9'
+                                 'device-id': 'c28d3cb16bbdac01'
                              }
                             response = s.get(f"{apiurl}/v2/courses?tabCategoryId=1", headers=headers)  # Corrected indentation here
                             if response.status_code == 200:
@@ -383,7 +383,7 @@ async def extract_batch(app, message, org_name, batch_id):
             'user-agent': 'Mobile-Android',
             'app-version': '1.4.65.3',
             'api-version': '29',
-            'device-id': '39F093FF35F201D9'
+            'device-id': 'c28d3cb16bbdac01'
         }
 
         async def get_signed_url(session, url, token):
