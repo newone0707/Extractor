@@ -73,11 +73,10 @@ async def fetch_cpwp_signed_url(url_val: str, name: str, session: aiohttp.Client
     TIMEOUT = 60  # Increased timeout to 60 seconds
     
     for attempt in range(MAX_RETRIES):
-        params = {"url": url_val}
         try:
+            signed_api = f"https://api.classplusapp.com/cams/uploader/video/jw-signed-url?url={url_val}"
             async with session.get(
-                "https://api.classplusapp.com/cams/uploader/video/jw-signed-url", 
-                params=params, 
+                signed_api, 
                 headers=headers,
                 timeout=TIMEOUT
             ) as response:
@@ -109,6 +108,11 @@ async def fetch_cpwp_signed_url(url_val: str, name: str, session: aiohttp.Client
 async def process_cpwp_url(url_val: str, name: str, session: aiohttp.ClientSession, headers: Dict[str, str]) -> str | None:
     """Process video URLs"""
     try:
+        if any(x in url_val for x in ["classplusapp.com", "tencdn.classplusapp", "videos.classplusapp", "media-cdn"]):
+            signed_url = await fetch_cpwp_signed_url(url_val, name, session, headers)
+            if signed_url:
+                url_val = signed_url
+
         if url_val.endswith(('.m3u8', '.mp4', '.mpd')):
             return f"{name}:{url_val}\n"
             
