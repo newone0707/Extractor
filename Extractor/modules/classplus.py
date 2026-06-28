@@ -433,7 +433,21 @@ async def extract_batch(app, message, org_name, batch_id):
                 sub_name = item['name']
 
                 if content_type == "2":  # Video
-                    video_url = item["url"]
+                    video_url = item.get("url", "")
+                    content_hash_id = item.get("contentHashId", "")
+                    
+                    if video_url and content_hash_id and "contentId=" not in video_url:
+                        try:
+                            import base64
+                            import json
+                            payload = session_data["token"].split('.')[1]
+                            payload += '=' * (-len(payload) % 4)
+                            user_data = json.loads(base64.urlsafe_b64decode(payload).decode('utf-8'))
+                            user_id = user_data.get('id', '')
+                            video_url = f"{video_url}?contentId={content_hash_id}&user_id={user_id}"
+                        except:
+                            video_url = f"{video_url}?contentId={content_hash_id}"
+                    
                     signed_url = await get_signed_url(session, video_url, session_data["token"])
                     full_name = f"{folder_path}{sub_name}: {signed_url}\n"
                     result.append(full_name)
@@ -462,6 +476,25 @@ async def extract_batch(app, message, org_name, batch_id):
                         for video in j["data"]["list"]:
                             name = video.get("name", "Unknown Video")
                             video_url = video.get("url", "")
+                            live_session_id = video.get("liveSessionId", "") or video.get("contentHashId", "")
+                            if video_url and live_session_id and "liveSessionId=" not in video_url and "contentId=" not in video_url:
+                                try:
+                                    import base64
+                                    import json
+                                    payload = session_data["token"].split('.')[1]
+                                    payload += '=' * (-len(payload) % 4)
+                                    user_data = json.loads(base64.urlsafe_b64decode(payload).decode('utf-8'))
+                                    user_id = user_data.get('id', '')
+                                    if "liveSessionId" in video:
+                                        video_url = f"{video_url}?liveSessionId={live_session_id}&user_id={user_id}"
+                                    else:
+                                        video_url = f"{video_url}?contentId={live_session_id}&user_id={user_id}"
+                                except:
+                                    if "liveSessionId" in video:
+                                        video_url = f"{video_url}?liveSessionId={live_session_id}"
+                                    else:
+                                        video_url = f"{video_url}?contentId={live_session_id}"
+
                             if video_url:
                                 signed_url = await get_signed_url(session, video_url, session_data["token"])
                                 outputs.append(f"{name}: {signed_url}\n")
