@@ -129,16 +129,26 @@ async def classplus_txt(app, message):
                                  'device-id': 'c28d3cb16bbdac01'
                              }
                             courses = []
-for tab_id in [1, 2, 3, 4, 5]:
-    try:
-        resp = s.get(f"{apiurl}/v2/courses?tabCategoryId={tab_id}", headers=headers)
-        if resp.status_code == 200:
-            c = resp.json().get("data", {}).get("courses", [])
-            if c:
-                courses.extend(c)
-    except Exception:
-        pass
-if courses:
+
+                            for tab_id in [1, 2, 3, 4, 5]:
+
+                                try:
+
+                                    resp = s.get(f"{apiurl}/v2/courses?tabCategoryId={tab_id}", headers=headers)
+
+                                    if resp.status_code == 200:
+
+                                        c = resp.json().get("data", {}).get("courses", [])
+
+                                        if c:
+
+                                            courses.extend(c)
+
+                                except Exception:
+
+                                    pass
+
+                            if courses:
                                 s.session_data = {"token": token, "courses": {course["id"]: course["name"] for course in courses}}
                                 await fetch_batches(app, message, org_name)
                             else:
@@ -216,16 +226,26 @@ if courses:
                                  'device-id': '39F093FF35F201D9'
                              }
                             courses = []
-for tab_id in [1, 2, 3, 4, 5]:
-    try:
-        resp = s.get(f"{apiurl}/v2/courses?tabCategoryId={tab_id}", headers=headers)
-        if resp.status_code == 200:
-            c = resp.json().get("data", {}).get("courses", [])
-            if c:
-                courses.extend(c)
-    except Exception:
-        pass
-if courses:
+
+                            for tab_id in [1, 2, 3, 4, 5]:
+
+                                try:
+
+                                    resp = s.get(f"{apiurl}/v2/courses?tabCategoryId={tab_id}", headers=headers)
+
+                                    if resp.status_code == 200:
+
+                                        c = resp.json().get("data", {}).get("courses", [])
+
+                                        if c:
+
+                                            courses.extend(c)
+
+                                except Exception:
+
+                                    pass
+
+                            if courses:
                                 s.session_data = {"token": token, "courses": {course["id"]: course["name"] for course in courses}}
                                 await fetch_batches(app, message, org_name)
                             
@@ -273,16 +293,26 @@ if courses:
                                  'device-id': '39F093FF35F201D9'
                              }
                             courses = []
-for tab_id in [1, 2, 3, 4, 5]:
-    try:
-        resp = s.get(f"{apiurl}/v2/courses?tabCategoryId={tab_id}", headers=headers)
-        if resp.status_code == 200:
-            c = resp.json().get("data", {}).get("courses", [])
-            if c:
-                courses.extend(c)
-    except Exception:
-        pass
-if courses:
+
+                            for tab_id in [1, 2, 3, 4, 5]:
+
+                                try:
+
+                                    resp = s.get(f"{apiurl}/v2/courses?tabCategoryId={tab_id}", headers=headers)
+
+                                    if resp.status_code == 200:
+
+                                        c = resp.json().get("data", {}).get("courses", [])
+
+                                        if c:
+
+                                            courses.extend(c)
+
+                                except Exception:
+
+                                    pass
+
+                            if courses:
                                 s.session_data = {"token": token, "courses": {course["id"]: course["name"] for course in courses}}
                                 await fetch_batches(app, message, org_name)
                             else:
@@ -306,16 +336,26 @@ if courses:
             'device-id': '39F093FF35F201D9'
         }
         courses = []
-for tab_id in [1, 2, 3, 4, 5]:
-    try:
-        resp = s.get(f"{apiurl}/v2/courses?tabCategoryId={tab_id}", headers=headers)
-        if resp.status_code == 200:
-            c = resp.json().get("data", {}).get("courses", [])
-            if c:
-                courses.extend(c)
-    except Exception:
-        pass
-if courses:
+
+        for tab_id in [1, 2, 3, 4, 5]:
+
+            try:
+
+                resp = s.get(f"{apiurl}/v2/courses?tabCategoryId={tab_id}", headers=headers)
+
+                if resp.status_code == 200:
+
+                    c = resp.json().get("data", {}).get("courses", [])
+
+                    if c:
+
+                        courses.extend(c)
+
+            except Exception:
+
+                pass
+
+        if courses:
     
             s.session_data = {
                 "token": user_input,
