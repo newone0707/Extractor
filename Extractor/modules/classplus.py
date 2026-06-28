@@ -128,9 +128,17 @@ async def classplus_txt(app, message):
                                  'api-version': '29',
                                  'device-id': 'c28d3cb16bbdac01'
                              }
-                            response = s.get(f"{apiurl}/v2/courses?tabCategoryId=1", headers=headers)  # Corrected indentation here
-                            if response.status_code == 200:
-                                courses = response.json()["data"]["courses"]
+                            courses = []
+for tab_id in [1, 2, 3, 4, 5]:
+    try:
+        resp = s.get(f"{apiurl}/v2/courses?tabCategoryId={tab_id}", headers=headers)
+        if resp.status_code == 200:
+            c = resp.json().get("data", {}).get("courses", [])
+            if c:
+                courses.extend(c)
+    except Exception:
+        pass
+if courses:
                                 s.session_data = {"token": token, "courses": {course["id"]: course["name"] for course in courses}}
                                 await fetch_batches(app, message, org_name)
                             else:
@@ -207,9 +215,17 @@ async def classplus_txt(app, message):
                                  'api-version': '29',
                                  'device-id': '39F093FF35F201D9'
                              }
-                            response = s.get(f"{apiurl}/v2/courses?tabCategoryId=1", headers=headers)  # Corrected indentation here
-                            if response.status_code == 200:
-                                courses = response.json()["data"]["courses"]
+                            courses = []
+for tab_id in [1, 2, 3, 4, 5]:
+    try:
+        resp = s.get(f"{apiurl}/v2/courses?tabCategoryId={tab_id}", headers=headers)
+        if resp.status_code == 200:
+            c = resp.json().get("data", {}).get("courses", [])
+            if c:
+                courses.extend(c)
+    except Exception:
+        pass
+if courses:
                                 s.session_data = {"token": token, "courses": {course["id"]: course["name"] for course in courses}}
                                 await fetch_batches(app, message, org_name)
                             
@@ -256,9 +272,17 @@ async def classplus_txt(app, message):
                                  'api-version': '29',
                                  'device-id': '39F093FF35F201D9'
                              }
-                            response = s.get(f"{apiurl}/v2/courses?tabCategoryId=1", headers=headers)  # Corrected indentation here
-                            if response.status_code == 200:
-                                courses = response.json()["data"]["courses"]
+                            courses = []
+for tab_id in [1, 2, 3, 4, 5]:
+    try:
+        resp = s.get(f"{apiurl}/v2/courses?tabCategoryId={tab_id}", headers=headers)
+        if resp.status_code == 200:
+            c = resp.json().get("data", {}).get("courses", [])
+            if c:
+                courses.extend(c)
+    except Exception:
+        pass
+if courses:
                                 s.session_data = {"token": token, "courses": {course["id"]: course["name"] for course in courses}}
                                 await fetch_batches(app, message, org_name)
                             else:
@@ -281,9 +305,17 @@ async def classplus_txt(app, message):
             'api-version': '29',
             'device-id': '39F093FF35F201D9'
         }
-        response = s.get(f"{apiurl}/v2/courses?tabCategoryId=1", headers=headers)
-        if response.status_code == 200:
-            courses = response.json()["data"]["courses"]
+        courses = []
+for tab_id in [1, 2, 3, 4, 5]:
+    try:
+        resp = s.get(f"{apiurl}/v2/courses?tabCategoryId={tab_id}", headers=headers)
+        if resp.status_code == 200:
+            c = resp.json().get("data", {}).get("courses", [])
+            if c:
+                courses.extend(c)
+    except Exception:
+        pass
+if courses:
     
             s.session_data = {
                 "token": user_input,
