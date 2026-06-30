@@ -125,24 +125,9 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                     
             fallback_outputs.append(f"{prefix}{vt} : {item_link}{key_str}*{course_id}*{fi}")
 
-        if not r4 or not r4.get("data"):
-            return fallback_outputs
-
-        data = r4.get("data")
-        vt_api = data.get("Title", "")
-        vl = data.get("download_link", "")
-        fl = data.get("video_id", "")
-        
-        if not vt: vt = vt_api
-        
-        if fl:
-            dfl = decrypt(fl)
-            if dfl:
-                if '.m3u8' in dfl or '.mp4' in dfl or 'genomic' in dfl or '/' in dfl:
-                    final_link = f"https://appxsignurl.vercel.app/appx/{dfl}?appxv=3"
-                else:
-                    final_link = f"https://youtu.be/{dfl}"
-                outputs.append(f"{prefix}{vt} : {final_link}*{course_id}*{fi}")
+        # Skip Vercel API and just use the direct raw item_links
+        # The Vercel API (appxsignurl.vercel.app) is dead (returns 402 Payment Required)
+        return fallback_outputs
 
         if vl:
             dvl = decrypt(vl)
