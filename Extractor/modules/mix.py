@@ -262,13 +262,14 @@ async def fetch_folder_contents(api_base, course_id, folder_id, headers, current
                     break
     
                 if is_folder:
-                    await fetch_folder_contents(api_base, course_id, item.get("id"), headers, new_path, userid, progress_callback, limit, output_list)
+                    res = await fetch_folder_contents(api_base, course_id, item.get("id"), headers, new_path, userid, progress_callback, limit, output_list)
                 else:
                     res = await fetch_item_details(api_base, course_id, item, headers, new_path, userid, progress_callback)
-                    if res:
-                        outputs.extend(res)
-                        if output_list is not None:
-                            output_list.extend(res)
+                
+                if res:
+                    outputs.extend(res)
+                    if output_list is not None:
+                        output_list.extend(res)
 
         return outputs
 
@@ -532,11 +533,12 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
                 if limit and len(all_outputs) >= limit:
                     break
                 if is_folder:
-                    await fetch_folder_contents(api_base, raw_text2, item.get("id"), hdr1, item.get("Title", ""), userid, my_callback, limit, all_outputs)
+                    res = await fetch_folder_contents(api_base, raw_text2, item.get("id"), hdr1, item.get("Title", ""), userid, my_callback, limit, all_outputs)
                 else:
                     res = await fetch_item_details(api_base, raw_text2, item, hdr1, "", userid, my_callback)
-                    if res:
-                        all_outputs.extend(res)
+                
+                if res:
+                    all_outputs.extend(res)
                 
                 processed += 1
 
