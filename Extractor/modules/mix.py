@@ -268,7 +268,12 @@ async def fetch_folder_contents(api_base, course_id, folder_id, headers, current
                 
                 if res:
                     outputs.extend(res)
-                    if output_list is not None:
+                    # output_list is mutated recursively, so if we're not careful we duplicate. 
+                    # If it's fetch_item_details, we should add to output_list if we want to track global limit.
+                    # BUT wait, if we extend outputs, and return outputs, the parent will extend outputs AND output_list AGAIN.
+                    # The easiest fix is to ONLY use `outputs` for recursion, and let the TOP LEVEL caller handle adding to output_list if needed, or just don't mutate output_list here except for leaf nodes!
+                    # Actually, if we just let it return normally, we don't need output_list here at all except for length checking.
+                    if output_list is not None and not is_folder:
                         output_list.extend(res)
 
         return outputs
@@ -534,11 +539,11 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
                     break
                 if is_folder:
                     res = await fetch_folder_contents(api_base, raw_text2, item.get("id"), hdr1, item.get("Title", ""), userid, my_callback, limit, all_outputs)
+                    # fetch_folder_contents already adds items to all_outputs directly.
                 else:
                     res = await fetch_item_details(api_base, raw_text2, item, hdr1, "", userid, my_callback)
-                
-                if res:
-                    all_outputs.extend(res)
+                    if res:
+                        all_outputs.extend(res)
                 
                 processed += 1
 
