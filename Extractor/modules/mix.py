@@ -283,7 +283,9 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                 epath = link.get("path", "")
                 ekey_b64 = link.get("key", "")
 
-                if epath and epath.startswith("http"):
+                # Only use direct http path for appx.co.in - classx.co.in signed URLs expire fast
+                # classx.co.in should go through the decrypt fallback which stores video_id for fresh URL generation
+                if epath and epath.startswith("http") and "appx.co.in" in epath:
                     ekey_val = ""
                     if ekey_b64:
                         try:
@@ -306,6 +308,7 @@ async def fetch_item_details(api_base, course_id, item, headers, current_path=""
                         outputs.append(f"{prefix}{vt} : {epath}*{course_id}*{fi}")
                     encrypted_link_found = True
                     break
+
 
         # FALLBACK: if encrypted_links gave nothing, try old fl/vl approach
         if not encrypted_link_found:
