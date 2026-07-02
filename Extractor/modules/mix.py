@@ -910,7 +910,15 @@ async def run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2
 
         filename = filename.replace("/", "").replace(" ", "_")
 
-        
+    # Prepend Token and BaseURL so Downloader bot can make fresh API calls
+
+    header_lines = [f"BaseURL: {api_base}"]
+
+    if token:
+
+        header_lines.insert(0, f"Token: {token}")
+
+    all_outputs = header_lines + all_outputs
 
     with open(filename, 'w', encoding='utf-8') as f:
 
@@ -1155,6 +1163,12 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
         if all_outputs:
 
             all_outputs.insert(0, f"BaseURL: {api_base}")
+
+            # Insert token so Downloader bot can use it for classx API calls (fresh signed URL)
+
+            if token:
+
+                all_outputs.insert(0, f"Token: {token}")
 
 
 
