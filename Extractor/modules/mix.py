@@ -918,7 +918,13 @@ async def run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2
 
         header_lines.insert(0, f"Token: {token}")
 
-    all_outputs = header_lines + all_outputs
+    seen = set()
+    unique_outputs = []
+    for line in all_outputs:
+        if line not in seen:
+            unique_outputs.append(line)
+            seen.add(line)
+    all_outputs = header_lines + unique_outputs
 
     with open(filename, 'w', encoding='utf-8') as f:
 
