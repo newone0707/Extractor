@@ -26,3 +26,4 @@ werkzeug
 itsdangerous
 Unidecode
 bs4
+cryptography
