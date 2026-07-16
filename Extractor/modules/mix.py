@@ -367,6 +367,7 @@ async def run_v1_fallback(app, message, token, userid, hdr1, app_name, raw_text2
         await progress_msg.edit_text("❌ <b>No content found in V1 Fallback either!</b>")
         return
         
+    all_outputs.insert(0, f"Token: {token}")
     all_outputs.insert(0, f"BaseURL: {api_base}")
     filename = f"{raw_text2}_{course_name}.txt"
     if '/' in filename:
@@ -493,7 +494,8 @@ async def v2_new(app, message, token, userid, hdr1, app_name, raw_text2, api_bas
         encrypted_count = sum(1 for url in all_outputs if 'encrypted' in url.lower() or '*' in url)
 
         if all_outputs:
-            all_outputs.insert(0, f"BaseURL: {api_base}")
+            all_outputs.insert(0, f"Token: {token}")
+    all_outputs.insert(0, f"BaseURL: {api_base}")
 
         file_name = f"{app_name}_{sanitized_course_name}_{int(datetime.now().timestamp())}.txt"
         with open(file_name, 'w', encoding='utf-8') as f:
