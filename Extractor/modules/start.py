@@ -18,7 +18,7 @@ from Extractor.modules.appex_v2 import appex_v2_txt, appex_v2_cmd
 from Extractor.modules.appex_v3 import appex_v3_txt, appex_v3_cmd
 from Extractor.modules.appex_v4 import appex_v5_txt
 from Extractor.modules.classplus import classplus_txt
-from Extractor.modules.pw import pw_login, pw_mobile, pw_token
+from Extractor.modules.pw import pw_login
 from Extractor.modules.exampur import exampur_txt
 from Extractor.modules.careerwill import career_will
 from Extractor.modules.utk import handle_utk_logic
@@ -711,28 +711,6 @@ async def handle_callback(client, query):
     elif query.data == 'ak_':
         await ak_start(app, query.message)
   
-    elif query.data == 'pw2_':
-        await query.message.reply_text(
-            "**CHHOSE FROM BELOW **",
-            reply_markup=InlineKeyboardMarkup([
-                [
-                    InlineKeyboardButton("Mobile No.", callback_data='mobile_'),
-                    InlineKeyboardButton("Token", callback_data='token_'),
-                ]]))
-
-    elif query.data == 'mobile_':
-        await pw_mobile(app, query.message)
-
-    elif query.data == 'token_':
-        await pw_token(app, query.message)
-        
-
-
-
-  
-
-  
-
     elif query.data=="close_data":
         await query.message.delete()
         await query.message.reply_to_message.delete()
