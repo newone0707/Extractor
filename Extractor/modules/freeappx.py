@@ -468,9 +468,9 @@ async def process_folder_wise_course_1(session, api, selected_batch_id, headers,
 
 async def process_appxwp(bot: Client, m: Message, user_id: int):
     loop = asyncio.get_event_loop()
-    CONNECTOR = aiohttp.TCPConnector(limit=100, loop=loop)
+    CONNECTOR = aiohttp.TCPConnector(limit=100)
 
-    async with aiohttp.ClientSession(connector=CONNECTOR, loop=loop) as session:
+    async with aiohttp.ClientSession(connector=CONNECTOR) as session:
         editable = None
         try:
             editable = await m.reply_text("Enter App Name Or Api")
@@ -771,3 +771,4 @@ async def appxwp_callback(client, callback_query):
 
 
                         
+
