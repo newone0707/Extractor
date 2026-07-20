@@ -16,7 +16,6 @@ from datetime import datetime
 import pytz
 import config 
 
-
 join = config.join
 india_timezone = pytz.timezone('Asia/Kolkata')
 current_time = datetime.now(india_timezone)
@@ -111,7 +110,6 @@ async def fetch_item_details(session, api_base, course_id, item, headers):
 
     return outputs
     
-                    
         
 async def fetch_folder_contents(session, api_base, course_id, folder_id, headers):
     outputs = []  
@@ -161,7 +159,6 @@ async def appex_v2_txt(app, message, api, name):
     if '*' in raw_text:
         info["email"] = raw_text.split("*")[0]
         info["password"] = raw_text.split("*")[1]
-        
 
         try:
             scraper = cloudscraper.create_scraper()
@@ -178,8 +175,16 @@ async def appex_v2_txt(app, message, api, name):
             return await message.reply_text("Please try again later. Maybe Password Wrong")
     else:
         token = raw_text
-        
-        userid = "extracted_userid_from_token"
+        try:
+            import jwt as _jwt
+            payload_part = token.split('.')[1]
+            payload_part += '=' * (-len(payload_part) % 4)
+            import base64 as _base64
+            payload_json = _base64.urlsafe_b64decode(payload_part).decode('utf-8')
+            payload_data = json.loads(payload_json)
+            userid = str(payload_data.get('id', payload_data.get('userId', payload_data.get('userid', ''))))
+        except Exception:
+            userid = ""
 
     hdr1 = {
         "Client-Service": "Appx",
@@ -189,43 +194,41 @@ async def appex_v2_txt(app, message, api, name):
         "User-ID": userid
     }
     
-    
-    
     async with aiohttp.ClientSession() as session:
         async with session.get(f"{api_base}/get/get_all_purchases?userid={userid}&item_type=10", headers=hdr1) as res1:
             j1 = await res1.json()
 
         FFF = "**COURSE-ID  -  COURSE NAME**\n\n"
         valid_ids = []
+        cp = ""
         if "data" in j1:
             for item in j1["data"]:
                 for ct in item["coursedt"]:
                     i = ct.get("id")
                     cn = ct.get("course_name")
+                    cp = ct.get("course_thumbnail", "")
                     start = ct.get("start_date")
                     end = ct.get("end_date")
                     pricing = ct.get("price")
                     thumbnail = ct.get("course_thumbnail")
-                    FFF += f"**`{i}`   -   `{cn}`**\n\n"
+                    FFF += f"**{i}   -   {cn}**\n\n"
                     valid_ids.append(i)
 
-        
-        
         if len(FFF) <= 4096:
-            editable1 = await message.reply_text(f"𝗔𝗽𝗽𝘅 𝗟𝗼𝗴𝗶𝗻 𝗦𝘂𝗰𝗲𝘀𝘀✅ for {app_name}\n\n {api_base}\n\n`{token}`\n{FFF}")
-            dl=(f"𝗔𝗽𝗽𝘅 𝗟𝗼𝗴𝗶𝗻 𝗦𝘂𝗰𝗲𝘀𝘀✅ for {app_name} \n\n`{api_base}`\n\n`{raw_text}`\n\n`{token}`\n{FFF}")
+            editable1 = await message.reply_text(f"𝗔𝗽𝗽𝘅 𝗟𝗼𝗴𝗶𝗻 𝗦𝘂𝗰𝗲𝘀𝘀✅ for {app_name}\n\n {api_base}\n\n{token}\n{FFF}")
+            dl=(f"𝗔𝗽𝗽𝘅 𝗟𝗼𝗴𝗶𝗻 𝗦𝘂𝗰𝗲𝘀𝘀✅ for {app_name} \n\n{api_base}\n\n{raw_text}\n\n{token}\n{FFF}")
             await app.send_message(PREMIUM_LOGS, dl)
         else:
-            plain_FFF = FFF.replace("**", "").replace("`", "")
+            plain_FFF = FFF.replace("**", "").replace("", "")
             file_path = f"{app_name}.txt"
             with open(file_path, "w") as file:
-                file.write(f"𝗔𝗽𝗽𝘅 𝗟𝗼𝗴𝗶𝗻 𝗦𝘂𝗰𝗲𝘀𝘀✅for {app_name}\n\nToken: {token}\n\n{plain_FFF}")
+                file.write(f"𝗔𝗽𝗽𝘅 𝗟𝗼𝗴𝗶ɴ 𝗦𝘂𝗰𝗲𝘀𝘀✅for {app_name}\n\nToken: {token}\n\n{plain_FFF}")
             await app.send_document(
             message.chat.id,
             document=file_path,
             caption="Too much batches so select batch id  from txt "
             )
-            await app.send_document(PREMIUM_LOGS, document=filepath , caption=  "Many Batch Found" )
+            await app.send_document(PREMIUM_LOGS, document=file_path, caption=  "Many Batch Found" )
             editable1 = None
         input2 = await app.ask(message.chat.id, text="**Now send the Course ID to Download**")
         raw_text2 = input2.text
@@ -271,28 +274,17 @@ async def appex_v2_txt(app, message, api, name):
         elapsed_time = end_time - start_time
         caption =(f"࿇ ══━━ 🏦 ━━══ ࿇\n\n"
                  f"🌀 **Aᴘᴘ Nᴀᴍᴇ** : {app_name}\n"
-               #  f"🔑 **Oʀɢ Cᴏᴅᴇ** : `{org_code}`\n"
                  f"============================\n\n"
-                 f"🎯 **Bᴀᴛᴄʜ Nᴀᴍᴇ** : `{sanitized_course_name}`\n"
-                 f"🌟 **Cᴏᴜʀsᴇ Tʜᴜᴍʙɴᴀɪʟ** : <a href={cp}>Thumbnail</a>\n\n"
+                 f"🎯 **Bᴀᴛᴄʜ Nᴀᴍᴇ** : {sanitized_course_name}\n"
+                 f"🌟 **Cᴏᴜʀsᴇ Tʜᴜᴍʙɴᴀɪʟ** : <a href='{cp}'>Thumbnail</a>\n\n"
                  f"🌐 **Jᴏɪɴ Us** : {join}\n"
                  f"⌛ **Tɪᴍᴇ Tᴀᴋᴇɴ** : {elapsed_time:.1f} seconds</blockquote>\n\n"
                  f"❄️ **Dᴀᴛᴇ** : {time_new}")
                  
-      #  c_text = (f"**AppName:** {app_name}\n"
-               #   f"**BatchName:** {sanitized_course_name}\n"
-                #  f"**Batch Start Date:** {start}\n"
-           #       f"**Validity Ends On:** {end}\n"
-                  #f"Elapsed time: {elapsed_time:.1f} seconds\n"
-                #  f"**Batch Purchase At:** {pricing}")
         await app.send_document(message.chat.id, filename, caption=caption)
         await app.send_document(PREMIUM_LOGS, filename, caption = caption)
         os.remove(filename)
         await message.reply_text("Done✅")
-
-
-    
-
 
 @app.on_message(filters.command(["apiv2", "appx2"]))
 async def appex_v2_cmd(bot, m):
