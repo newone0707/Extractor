@@ -12,7 +12,7 @@ from Extractor import app
 from config import  PREMIUM_LOGS
 from pyrogram import Client, filters, idle
 from pyrogram.types import Message
-#from pyrogram.errors import ListenerTimeout
+from pyrogram.errors import ListenerTimeout
 from subprocess import getstatusoutput
 import config
 from datetime import datetime
@@ -557,4 +557,5 @@ async def process_pwwp(bot: Client, m: Message, user_id: int):
             if session:
                 await session.close()
             await CONNECTOR.close()
+
 
