@@ -18,7 +18,7 @@ from Extractor.modules.appex_v2 import appex_v2_txt, appex_v2_cmd
 from Extractor.modules.appex_v3 import appex_v3_txt, appex_v3_cmd
 from Extractor.modules.appex_v4 import appex_v5_txt
 from Extractor.modules.classplus import classplus_txt
-from Extractor.modules.pw import pw_login
+from Extractor.modules.pw import pw_login, pw_mobile, pw_token
 from Extractor.modules.exampur import exampur_txt
 from Extractor.modules.careerwill import career_will
 from Extractor.modules.utk import handle_utk_logic
@@ -32,7 +32,6 @@ from Extractor.modules.findapi import findapis_extract
 from Extractor.modules.rg_vikramjeet import rgvikramjeet
 from Extractor.modules.adda import adda_command_handler
 from Extractor.modules.vision import scrape_vision_ias
-from Extractor.modules.rg_vikramjeet import rgvikramjeet
 from Extractor.core.utils import forward_to_log
 from Extractor.modules.enc import *
 
@@ -280,8 +279,6 @@ back_button  = [[
 def photo():
     # Use THUMB_URL (correct case) from config
     return config.THUMB_URL
-
-    # Keeping the old code as comment for reference
 
 @app.on_message(filters.command("start"))  # & filters.user(SUDO_USERS))
 async def start(_, message):
@@ -637,7 +634,7 @@ async def handle_callback(client, query):
     elif query.data == "rg_vikramjeet":     
         api = "rgvikramjeetapi.classx.co.in"
         name = "RG Vikramjeet"
-        await rgvikram_txt(app, query.message, api, name)
+        await appex_v5_txt(app, query.message, api, name)
       
     elif query.data == "vidya_bihar":     
         api = "vidyabiharapi.teachx.in"
@@ -712,7 +709,7 @@ async def handle_callback(client, query):
         await classplus_txt(app, query.message)
 
     elif query.data == 'ak_':
-        await ak_start(client, query.message)
+        await ak_start(app, query.message)
   
     elif query.data == 'pw2_':
         await query.message.reply_text(
@@ -805,24 +802,6 @@ async def handle_callback(client, query):
         await kdlive(app, query.message)
     elif query.data == "iq_":
         await handle_iq_logic(app, query.message)
-    elif query.data == "adda_":
-        await adda_command_handler(app, query.message)
-    elif query.data == "classplus_":
-        await classplus_txt(app, query.message)
-
-    elif query.data == "jchemistry_":
-        await jchemistry(app, query.message)
-        
-    elif query.data == "taiyari_karlo":
-        await taiyari_karlo(app, query.message)
-        
-    elif query.data == "ifas_":
-        await ifas(app, query.message)
-    elif query.data == "ak_":
-        await ak_start(app, query.message)
-    elif query.data == "exampur_txt":
-        await exampur_txt(app, query.message)
-
 
 def get_alphabet_keyboard():
     """Create a keyboard with A-Z buttons in a modern style"""
@@ -860,13 +839,6 @@ def get_apps_by_letter(letter):
     except Exception as e:
         print(f"Error reading appxapis.json: {e}")
         return []
-
-
-def to_small_caps(text):
-    normal = "abcdefghijklmnopqrstuvwxyz"
-    small_caps = "ᴀʙᴄᴅᴇꜰɢʜɪᴊᴋʟᴍɴᴏᴘǫʀsᴛᴜᴠᴡxʏᴢ"
-    table = str.maketrans(''.join(normal), ''.join(small_caps))
-    return text.lower().translate(table)
 
 
 def create_app_keyboard(apps, page=0, letter=None):
@@ -919,14 +891,6 @@ def create_app_keyboard(apps, page=0, letter=None):
 @app.on_callback_query(filters.regex("^ignore$"))
 async def handle_ignore(client, query):
     await query.answer()
-
-def setup(app: Client):
-    """Setup the start module"""
-    app.add_handler(filters.command("start"), start_command)
-    app.add_handler(filters.callback_query(), handle_callback_query)
-    
-    # Setup message handlers for AKExtractor
-    app.add_handler(filters.private & ~filters.command, ak_extractor.handle_message)
 
 @app.on_message(filters.command("txt2html"))
 async def txt2html_command(client, message):
@@ -1109,3 +1073,4 @@ async def html_to_text_command(client: Client, message: Message):
     
 
     
+
