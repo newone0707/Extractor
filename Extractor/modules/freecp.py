@@ -12,7 +12,7 @@ from config import PREMIUM_LOGS
 import config
 from pyrogram import Client, filters, idle
 from pyrogram.types import Message
-# from pyrogram.errors import ListenerTimeout
+from pyrogram.errors import ListenerTimeout
 from subprocess import getstatusoutput
 from datetime import datetime
 import pytz
@@ -282,7 +282,7 @@ async def get_cpwp_course_content(session: aiohttp.ClientSession, headers: Dict[
     
 async def process_cpwp(bot: Client, m: Message, user_id: int):
     # Add channel ID at the top
-    CHANNEL_ID = -1002601604234
+    # CHANNEL_ID = -1002601604234  # removed hardcoded override
     
     headers = {
         'accept': 'application/json, text/plain, */*',
@@ -654,3 +654,4 @@ async def process_cpwp(bot: Client, m: Message, user_id: int):
         finally:
             await session.close()
             await CONNECTOR.close()
+
